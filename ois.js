@@ -246,55 +246,32 @@ document.addEventListener("DOMContentLoaded", function() {
 		reader.onload = function(e) {
 			var img = new Image();
 			img.onload = function(e) {
-				getOrientation(file, function(orientation) {
-					src.width = img.width;
-					src.height = img.height;
-					var ctx = src.getContext("2d");
+				src.width = img.width;
+				src.height = img.height;
+				var ctx = src.getContext("2d");
 
-					var width = img.width;
-					var height = img.height;
+				// copy dst attributes
+				dst.width = src.width;
+				dst.height = src.height;
+				overlay.width = src.width;
+				overlay.height = src.height;
 
-					// set proper canvas dimensions before transform & export
-					if ([5,6,7,8].indexOf(orientation) > -1) {
-					  src.width = height;
-					  src.height = width;
-					} else {
-					  src.width = width;
-					  src.height = height;
-					}
+				ctx.drawImage(img, 0, 0);
+				// ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-					// copy dst attributes
-					dst.width = src.width;
-					dst.height = src.height;
-					overlay.width = src.width;
-					overlay.height = src.height;
+				topLeftX = offset;
+				topLeftY = offset;
+				topRightX = dst.width - offset;
+				topRightY = offset;
+				bottomLeftX = offset;
+				bottomLeftY = dst.height - offset;
+				bottomRightX = dst.width - offset;
+				bottomRightY = dst.height - offset;
 
-					switch (orientation) {
-					  case 2: ctx.transform(-1, 0, 0, 1, width, 0); break;
-					  case 3: ctx.transform(-1, 0, 0, -1, width, height ); break;
-					  case 4: ctx.transform(1, 0, 0, -1, 0, height ); break;
-					  case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
-					  case 6: ctx.transform(0, 1, -1, 0, height , 0); break;
-					  case 7: ctx.transform(0, -1, -1, 0, height , width); break;
-					  case 8: ctx.transform(0, -1, 1, 0, 0, width); break;
-					  default: ctx.transform(1, 0, 0, 1, 0, 0);
-					}
-					ctx.drawImage(img, 0, 0);
-					ctx.setTransform(1, 0, 0, 1, 0, 0);
+				updatePoints();
+				render();
 
-					topLeftX = offset;
-					topLeftY = offset;
-					topRightX = dst.width - offset;
-					topRightY = offset;
-					bottomLeftX = offset;
-					bottomLeftY = dst.height - offset;
-					bottomRightX = dst.width - offset;
-					bottomRightY = dst.height - offset;
 
-					updatePoints();
-					render();
-
-				});
 			};
 			img.src = e.target.result;
 
