@@ -330,7 +330,7 @@ document.addEventListener("DOMContentLoaded", function() {
 	function down(e) {
 		e.preventDefault();
 		var pos = getMousePos(src, e);
-		var sen = 30;
+		var sen = 40;
 		if ((pos.x > topLeftX - sen) && (pos.y > topLeftY - sen) && (pos.x < topLeftX + sen) && (pos.y < topLeftY + sen)) {
 			dragging = "topleft";
 		}
@@ -350,7 +350,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		e.preventDefault();
 
 		var pos = getMousePos(src, e);
-		var sen = 20;
+		var sen = 40;
 		if ((pos.x > topLeftX - sen) && (pos.y > topLeftY - sen) && (pos.x < topLeftX + sen) && (pos.y < topLeftY + sen)) {
 			overlay.style.cursor = "pointer";
 		}
