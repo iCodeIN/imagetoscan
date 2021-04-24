@@ -14,10 +14,13 @@ var whiteThreshold = 100;
 var worker = null;
 
 function getMousePos(canvas, evt) {
-    var rect = canvas.getBoundingClientRect();
+    const rect = canvas.getBoundingClientRect();
+    const x = evt instanceof TouchEvent ? evt.touches[0].clientX : evt.clientX;
+    const y = evt instanceof TouchEvent ? evt.touches[0].clientY : evt.clientY;
+
     return {
-        x: (evt.clientX - rect.left) / (rect.right - rect.left) * canvas.width,
-        y: (evt.clientY - rect.top) / (rect.bottom - rect.top) * canvas.height
+        x: (x - rect.left) / (rect.right - rect.left) * canvas.width,
+        y: (y - rect.top) / (rect.bottom - rect.top) * canvas.height
     };
 }
 
@@ -117,7 +120,7 @@ function updatePoints() {
 
 	var overlay = document.getElementById("overlay");
 	var ctx = overlay.getContext("2d");
-	var s = 10;
+	var s = 15;
 
 
 	overlay.width = overlay.width;
@@ -316,9 +319,18 @@ document.addEventListener("DOMContentLoaded", function() {
 		processFiles(e.dataTransfer.files);
 	});
 
-	overlay.addEventListener("mousedown", function(e) {
+	overlay.addEventListener("mousedown", down);
+	overlay.addEventListener("touchstart", down);
+	overlay.addEventListener("mousemove", move);
+	overlay.addEventListener("touchmove", move);
+	window.addEventListener("mouseup", up);
+	window.addEventListener("touchend", up);
+	window.addEventListener("touchcancel", up);
+
+	function down(e) {
+		e.preventDefault();
 		var pos = getMousePos(src, e);
-		var sen = 20;
+		var sen = 30;
 		if ((pos.x > topLeftX - sen) && (pos.y > topLeftY - sen) && (pos.x < topLeftX + sen) && (pos.y < topLeftY + sen)) {
 			dragging = "topleft";
 		}
@@ -332,9 +344,11 @@ document.addEventListener("DOMContentLoaded", function() {
 			dragging = "bottomright";
 		}
 		updatePoints();
-	});
+	}
 
-	overlay.addEventListener("mousemove", function(e) {
+	function move(e) {
+		e.preventDefault();
+
 		var pos = getMousePos(src, e);
 		var sen = 20;
 		if ((pos.x > topLeftX - sen) && (pos.y > topLeftY - sen) && (pos.x < topLeftX + sen) && (pos.y < topLeftY + sen)) {
@@ -356,31 +370,36 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		if (dragging) {
 			var pos = getMousePos(src, e);
-			if (dragging == "topleft") {
+			if (dragging === "topleft") {
 				topLeftX = pos.x;
 				topLeftY = pos.y;
 			}
-			if (dragging == "topright") {
+			if (dragging === "topright") {
 				topRightX = pos.x;
 				topRightY = pos.y;
 			}
-			if (dragging == "bottomleft") {
+			if (dragging === "bottomleft") {
 				bottomLeftX = pos.x;
 				bottomLeftY = pos.y;
 			}
-			if (dragging == "bottomright") {
+			if (dragging === "bottomright") {
 				bottomRightX = pos.x;
 				bottomRightY = pos.y;
 			}
 			updatePoints();
 		}
-	});
+	}
 
-	overlay.addEventListener("mouseup", function(e) {
+	function up(e) {
+		if (!dragging) {
+			return
+		}
+		e.preventDefault();
 
 		dragging = null;
 		updatePoints();
 		render();
-	});
+	}
+
 
 });
