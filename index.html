@@ -133,16 +133,13 @@
 
     <div class="columns content px-3">
         <div class="column">
-            <h3 class="title is-3 my-3">1. Upload Image</h3>
+            <h3 class="title is-3 my-3">1. Upload</h3>
             <hr/>
             <p>Select an image by dragging & dropping it or by using the Upload button.</p>
             <div class="my-3">
                 <label class="button is-primary is-small">
                     <i class="fas fa-upload mr-2"></i> Upload <input type="file" id="upload-file" @change="uploadFile" style="display: none;">
                 </label>
-                <a id="download-pdf" class="button is-primary is-small" @click="downloadPDF" :disabled="!pages.length"><i class="fas fa-file-pdf mr-2"></i> Download PDF</a>
-                <a id="download-image" class="button is-secondary is-small" ref="downloadImage" :disabled="!pages.length"><i class="fas fa-file-image mr-2"></i> Download Image</a>
-
             </div>
 
             <div id="pages" @dragover="hover" @dragleave="hover" @drop="drop">
@@ -158,12 +155,19 @@
                     </div>
                 </draggable>
             </div>
+
+            <div class="my-3">
+                <a id="download-pdf" class="button is-primary is-small" @click="downloadPDF" :disabled="!pages.length"><i class="fas fa-file-pdf mr-2"></i> Download PDF</a>
+                <a id="download-image" class="button is-secondary is-small" ref="downloadImage" :disabled="!pages.length"><i class="fas fa-file-image mr-2"></i> Download Image</a>
+
+            </div>
+
         </div>
     </div>
 
     <div class="columns content px-3">
         <div class="column">
-            <h3 class="title is-3 my-3">2. Select</h3>
+            <h3 class="title is-3 my-3">2. Crop</h3>
             <hr/>
             <p>Move the white corners to match the corners of the page in the photo.</p>
 
