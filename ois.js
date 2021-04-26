@@ -50,7 +50,10 @@ new Vue({
             this.pages.splice(this.currentPage, 1);
             if (this.currentPage > this.pages.length - 1) {
                 this.currentPage -= 1;
-            }
+            };
+            this.initializePage(this.currentPage);
+
+
         },
         render() {
             var src = this.$refs.sourcecanvas;
@@ -400,20 +403,8 @@ new Vue({
         },
         selectPage(index) {
             this.currentPage = index;
-        }
-    },
-    watch: {
-        whiteThreshold(val) {
-            const pageData = this.pages[this.currentPage];
-            pageData.whiteThreshold = val;
-            this.render();
         },
-        rotation(val) {
-            const pageData = this.pages[this.currentPage];
-            pageData.rotation = val;
-            this.render();
-        },
-        currentPage(newPage) {
+        initializePage(newPage) {
             const pageData = this.pages[newPage];
 
             this.topLeftX = pageData.topLeftX;
@@ -452,8 +443,23 @@ new Vue({
                 this.updatePoints();
             };
             img.src = pageData.image;
+        }        
+    },
+    watch: {
+        whiteThreshold(val) {
+            const pageData = this.pages[this.currentPage];
+            pageData.whiteThreshold = val;
+            this.render();
+        },
+        rotation(val) {
+            const pageData = this.pages[this.currentPage];
+            pageData.rotation = val;
+            this.render();
+        },
+        currentPage(newPage) {
+            this.initializePage(newPage);
+        },
 
-        }
     }
 
 })
