@@ -151,6 +151,8 @@
                 <label class="button is-primary is-small">
                     <i class="fas fa-upload mr-2"></i> Upload Image <input type="file" id="upload-file" @change="uploadFile" style="display: none;">
                 </label>
+                <a id="delete-page" class="button is-danger is-small" @click="deletePage" :disabled="!pages.length"><i class="fas fa-trash mr-2"></i> Delete Page</a>
+
             </div>
 
             <div id="pages" @dragover="hover" @dragleave="hover" @drop="drop">
@@ -234,6 +236,11 @@
                 <li>Rearrange the order of the pages as necessary.</li>
                 <li>Download a scanned version of your document in either PDF or image format.</li>
             </ol>
+            <h4 class="is-size-4 my-3">Does ImageToScan support creating documents with multiple pages?</h4>
+            <p>
+                Yes. Simply drag multiple photos at the same time or upload multiple photos. 
+                Then, you can edit each photo separately and rearrange them as needed.
+            </p>
             <h4 class="is-size-4 my-3">Is this website secure?</h4>
             <p>ImageToScan.com run on your browser and does not upload any content to any web server.
                 It is hosted on GitHub and you can see the source <a href="https://github.com/ronreiter/imagetoscan">here</a>.</p>

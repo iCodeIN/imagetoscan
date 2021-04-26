@@ -46,6 +46,12 @@ new Vue({
 
     },
     methods: {
+        deletePage() {
+            this.pages.splice(this.currentPage, 1);
+            if (this.currentPage > this.pages.length - 1) {
+                this.currentPage -= 1;
+            }
+        },
         render() {
             var src = this.$refs.sourcecanvas;
             var dst = this.$refs.destcanvas;
