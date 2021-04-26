@@ -31,8 +31,9 @@ new Vue({
         offset: 200,
         dragging: null,
         worker: null,
-        sen: 40,
+        sen: 60,
         s: 15,
+        margin: 5,
 
         currentPage: null,
     },
@@ -120,7 +121,7 @@ new Vue({
             overlay.width = overlay.width;
             ctx.clearRect(0, 0, ctx.width, ctx.height);
             ctx.beginPath();
-            ctx.lineWidth = this.s;
+            ctx.lineWidth = this.sen / 6;
             ctx.moveTo(this.topLeftX, this.topLeftY);
             ctx.lineTo(this.topRightX, this.topRightY);
             ctx.lineTo(this.bottomRightX, this.bottomRightY);
@@ -129,11 +130,22 @@ new Vue({
             ctx.strokeStyle = '#ccc';            
             ctx.stroke();
             ctx.closePath();
-            ctx.fillStyle = "#fff";
-            ctx.fillRect(this.topLeftX - this.s * 3, this.topLeftY - this.s * 3, this.s * 6, this.s * 6);
-            ctx.fillRect(this.bottomLeftX - this.s * 3, this.bottomLeftY - this.s * 3, this.s * 6, this.s * 6);
-            ctx.fillRect(this.topRightX - this.s * 3, this.topRightY - this.s * 3, this.s * 6, this.s * 6);
-            ctx.fillRect(this.bottomRightX - this.s * 3, this.bottomRightY - this.s * 3, this.s * 6, this.s * 6);
+
+            const points = [
+                [this.topLeftX, this.topLeftY],
+                [this.bottomLeftX, this.bottomLeftY],
+                [this.topRightX, this.topRightY],
+                [this.bottomRightX, this.bottomRightY],
+            ];
+
+            for (const point of points) {
+                ctx.beginPath();
+                ctx.fillStyle = "#fff";
+                ctx.arc(point[0], point[1], this.sen, 0, 2 * Math.PI, false);
+                ctx.fill();
+                ctx.closePath();
+            }
+
         },
         hover(e) {
             // file drag hover
@@ -238,7 +250,7 @@ new Vue({
         },
         downloadPDF(e) {            
             var pdf = new jsPDF();
-            var margin = 0;
+            var margin = this.margin;
 
             for (var i = 0; i < this.pages.length; i++) {
                 var imgData = this.pages[i].outputImage;
@@ -419,6 +431,7 @@ new Vue({
             img.onload = () => {
                 src.width = img.width;
                 src.height = img.height;
+                this.sen = src.width / 40;
 
                 // copy dst attributes
                 dst.width = src.width;
