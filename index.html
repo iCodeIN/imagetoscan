@@ -22,6 +22,8 @@
             height: 120px;
             border: 1px solid #ccc;
             background-color: #f8f8f8;
+            overflow-x: scroll;
+            overflow-y: hidden;
         }
 
         #pages:hover {
@@ -49,13 +51,13 @@
         #instructions {
             text-align: center;
             color: #aaa;
-            font-size: 30px;
+            font-size: 20px;
             line-height: 120px;
 
         }
 
         #instructions i {
-            font-size: 30px;
+            font-size: 20px;
         }
 
         .page-container {
@@ -136,7 +138,7 @@
             <p>Select an image by dragging & dropping it or by using the Upload button.</p>
             <div class="my-3">
                 <label class="button is-primary is-small">
-                    <i class="fas fa-upload mr-2"></i> Upload <input type="file" id="upload-file" @change.native="uploadFile" style="display: none;">
+                    <i class="fas fa-upload mr-2"></i> Upload <input type="file" id="upload-file" @change="uploadFile" style="display: none;">
                 </label>
                 <a id="download-pdf" class="button is-primary is-small" @click="downloadPDF" :disabled="!pages.length"><i class="fas fa-file-pdf mr-2"></i> Download PDF</a>
                 <a id="download-image" class="button is-secondary is-small" ref="downloadImage" :disabled="!pages.length"><i class="fas fa-file-image mr-2"></i> Download Image</a>

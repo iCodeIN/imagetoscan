@@ -265,7 +265,7 @@ new Vue({
             pdf.save("ImageToScan.pdf");
         },
         uploadFile(e) {
-            processFiles(e.target.files);
+            this.processFiles(e.target.files);
         },
         down(e) {
             e.preventDefault();
