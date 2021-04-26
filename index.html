@@ -18,18 +18,21 @@
         canvas {
             width: 100%;
         }
-        #canvascontainer {
-            width: 100%;
+        #pages {
+            height: 120px;
             border: 1px solid #ccc;
             background-color: #f8f8f8;
-            position: relative;
-            min-height: 300px;
         }
 
-        #canvascontainer:hover {
+        #pages:hover {
             background-color: #eee;
         }
 
+        #canvascontainer {
+            width: 100%;
+            position: relative;
+            min-height: 300px;
+        }
 
         #overlay {
             position: absolute;
@@ -47,13 +50,34 @@
             text-align: center;
             color: #aaa;
             font-size: 30px;
-            padding: 50px;
-            height: 300px;
-            margin-bottom: -300px;
+            line-height: 120px;
+
         }
 
         #instructions i {
-            font-size: 100px;
+            font-size: 30px;
+        }
+
+        .page-container {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .page {
+            cursor: pointer;
+            border: 3px solid gray;
+            width: 100px;
+            height: 100px;
+            margin: 10px;
+            display: inline-block;
+            background-position: center;
+            background-size: contain;
+            background-repeat: no-repeat;            
+            background-color: white;
+        }
+
+        .page.selected {
+            border: 3px solid #7957d5;
         }
 
     </style>
@@ -61,6 +85,8 @@
 <body>
 
 <div id="app">
+    <b-loading :is-full-page="true" v-model="loading" :can-cancel="true"></b-loading>
+
 
     <b-navbar type="is-light">
         <template slot="brand">
@@ -73,13 +99,13 @@
             <b-navbar-item href="#faq">
                 <i class="fas fa-question mr-2"></i> FAQ
             </b-navbar-item>
+        </template>
+
+        <template slot="end">
             <b-navbar-item href="https://github.com/ronreiter/imagetoscan">
                 <i class="fab fa-github mr-2"></i> GitHub
             </b-navbar-item>
-        </template>
-
-        <!--
-        <template slot="end">
+<!--
             <b-navbar-item tag="div">
                 <div class="buttons">
                     <a class="button is-primary">
@@ -90,8 +116,8 @@
                     </a>
                 </div>
             </b-navbar-item>
+-->            
         </template>
-        -->
 
     </b-navbar>
 
@@ -103,46 +129,69 @@
 <!--    <h4 style="text-align: center">Convert images into scanned PDF documents.</h4>-->
 <!--    <hr/>-->
 
+    <div class="columns content px-3">
+        <div class="column">
+            <h3 class="title is-3 my-3">1. Upload Image</h3>
+            <hr/>
+            <p>Select an image by dragging & dropping it or by using the Upload button.</p>
+            <div class="my-3">
+                <label class="button is-primary is-small">
+                    <i class="fas fa-upload mr-2"></i> Upload <input type="file" id="upload-file" @change.native="uploadFile" style="display: none;">
+                </label>
+                <a id="download-pdf" class="button is-primary is-small" @click="downloadPDF" :disabled="!pages.length"><i class="fas fa-file-pdf mr-2"></i> Download PDF</a>
+                <a id="download-image" class="button is-secondary is-small" ref="downloadImage" :disabled="!pages.length"><i class="fas fa-file-image mr-2"></i> Download Image</a>
 
+            </div>
+
+            <div id="pages" @dragover="hover" @dragleave="hover" @drop="drop">
+                <div id="instructions" v-if="!pages.length">
+                    <span><i class="fas fa-cloud-upload-alt"></i></span>
+                    <span>Drag and drop an image here</span>
+                </div>
+                <draggable v-if="pages.length" class="page-container" v-model="pages">
+                    <div v-for="page, index in pages">
+                        <div class="page" :class="{'selected': index === currentPage }" @click="selectPage(index)" :style="{'background-image': 'url(' + page.image + ')'}">
+                            
+                        </div>
+                    </div>
+                </draggable>
+            </div>
+        </div>
+    </div>
 
     <div class="columns content px-3">
         <div class="column">
-            <h3 class="title is-3 my-3">Select Image</h3>
+            <h3 class="title is-3 my-3">2. Select</h3>
             <hr/>
-            <p>1. Select an image by dragging & dropping it or by using the Upload button.</p>
-            <p>2. Move the white corners to match the corners of the page in the photo.</p>
-            <div class="my-3">
-                <label class="button is-primary is-small">
-                    <i class="fas fa-upload mr-2"></i> Upload <input type="file" id="upload-file" style="display: none;">
-                </label>
-
-            </div>
+            <p>Move the white corners to match the corners of the page in the photo.</p>
 
             <div id="canvascontainer">
-                <div id="instructions">
-                    <p><i class="fas fa-cloud-upload-alt"></i></p>
-                    <p>Drag and drop an image here</p>
-                </div>
-                <canvas id="sourcecanvas"></canvas>
-                <canvas id="overlay"></canvas>
 
+                <canvas id="sourcecanvas" ref="sourcecanvas"></canvas>
+                <canvas id="overlay" ref="overlay" @mousedown="down" @touchstart="down" @mousemove="move" @touchmove="move"></canvas>
             </div>
         </div>
         <div class="column">
-            <h3 class="title is-3 my-3">Download Scan</h3>
+            <h3 class="title is-3 my-3">3. Adjust</h3>
             <hr/>
-            <p>3. Adjust the white threshold of the document as needed.</p>
-            <p>4. When ready, click the "Download" button, or right click the image and save.</p>
-            <div class="my-3">
-                    <p>White Threshold: <input type="range" id="whitethreshold" min="0" max="255" value="100" style="width: 200px"
-                                               onchange="render()"></p>
+            <p>Adjust the white threshold and rotation of the document.</p>
+            <div class="columns">
+                <div class="column is-4">
+                    White Threshold
+                </div>
+                <div class="column">
+                    <b-slider :min="0" :max="255" v-model="whiteThreshold" lazy>
+                </div>
             </div>
-
-            <div class="my-3">
-                <a id="download-pdf" class="button is-primary is-small"><i class="fas fa-file-pdf mr-2"></i> Download PDF</a>
-                <a id="download-image" class="button is-secondary is-small"><i class="fas fa-file-image mr-2"></i> Download Image</a>
+            <div class="columns">
+                <div class="column is-4">
+                    Orientation
+                </div>
+                <div class="column">
+                    <b-slider :min="0" :max="270" :step="90" v-model="rotation" lazy></b-slider>
+                </div>                
             </div>
-            <canvas id="destcanvas"></canvas>
+            <canvas id="destcanvas" ref="destcanvas"></canvas>
         </div>
     </div>
 
@@ -187,11 +236,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cleave.js/1.6.0/cleave.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.3/jspdf.min.js"></script>
 <script src="ois.js"></script>
-<script>
-    new Vue({
-        el: "#app",
-    })
-</script>
 <script>
     (function (i, s, o, g, r, a, m) {
         i['GoogleAnalyticsObject'] = r;

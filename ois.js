@@ -1,18 +1,4 @@
 
-var topLeftX = 0;
-var topLeftY = 0;
-var topRightX = 0;
-var topRightY = 0;
-var bottomLeftX = 0;
-var bottomLeftY = 0;
-var bottomRightX = 0;
-var bottomRightY = 0;
-var offset = 200;
-var dragging = null;
-var fileName = null;
-var whiteThreshold = 100;
-var worker = null;
-
 function getMousePos(canvas, evt) {
     const rect = canvas.getBoundingClientRect();
     const x = evt instanceof TouchEvent ? evt.touches[0].clientX : evt.clientX;
@@ -24,359 +10,425 @@ function getMousePos(canvas, evt) {
     };
 }
 
+new Vue({
+    el: "#app",
+    data: {
+        loading: false,
+        pages: [],
+
+        topLeftX: 0,
+        topLeftY: 0,
+        topRightX: 0,
+        topRightY: 0,
+        bottomLeftX: 0,
+        bottomLeftY: 0,
+        bottomRightX: 0,
+        bottomRightY: 0,
+        rotation: 0,
+        fileName: null,
+        whiteThreshold: 100,
+
+        offset: 200,
+        dragging: null,
+        worker: null,
+        sen: 40,
+        s: 15,
+
+        currentPage: null,
+    },
+    mounted() {
+        this.worker = new Worker("./imageWorker.js");
+        this.worker.onmessage = this.finishRender;
+        window.addEventListener("mouseup", this.up);
+        window.addEventListener("touchend", this.up);
+        window.addEventListener("touchcancel", this.up);
+
+    },
+    methods: {
+        render() {
+            var src = this.$refs.sourcecanvas;
+            var dst = this.$refs.destcanvas;
+
+            var finalWidth = Math.floor(((this.topRightX + this.bottomRightX) / 2) - ((this.topLeftX + this.bottomLeftX) / 2));
+            var finalHeight = Math.floor(((this.bottomLeftY + this.bottomRightY) / 2) - ((this.topLeftY + this.topRightY) / 2));
+
+            dst.width = finalWidth;
+            dst.height = finalHeight;
+
+            this.pages[this.currentPage].outputWidth = finalWidth;
+            this.pages[this.currentPage].outputHeight = finalHeight;
+
+            const srcd = src.getContext("2d").getImageData(0, 0, src.width, src.height);
+            const dstd = dst.getContext("2d").getImageData(0, 0, dst.width, dst.height);
+
+            this.worker.postMessage({
+                srcd: srcd,
+                dstd: dstd,
+                sw: src.width,
+                dw: dst.width,
+                dh: dst.height,
+                whiteThreshold: this.whiteThreshold,
+                topLeftX: this.topLeftX,
+                topLeftY: this.topLeftY,
+                bottomLeftX: this.bottomLeftX,
+                bottomLeftY: this.bottomLeftY,
+                topRightX: this.topRightX,
+                topRightY: this.topRightY,
+                bottomRightX: this.bottomRightX,
+                bottomRightY: this.bottomRightY
+            });
+        },
+        finishRender(e) {
+            const dst = this.$refs.destcanvas;
+            var ctx = dst.getContext("2d");
+
+            const tempCanvas = document.createElement("canvas");
+            tempCanvas.width = dst.width;
+            tempCanvas.height = dst.height;            
+            var tempCtx = tempCanvas.getContext("2d");
+            tempCtx.putImageData(e.data.dstd, 0, 0);
+
+            if (this.rotation === 90 || this.rotation === 270) {
+                dst.width = tempCanvas.height;
+                dst.height = tempCanvas.width;            
+            }
+
+            switch(this.rotation) {
+                case 0:
+                    ctx.transform(1, 0, 0, 1, 0, 0);
+                    break;
+                case 90:
+                    ctx.transform(0, 1, -1, 0, tempCanvas.height, 0);
+                    break;
+                case 180:
+                    ctx.transform(-1, 0, 0, -1, tempCanvas.width, tempCanvas.height);
+                    break;
+                case 270:
+                    ctx.transform(0, -1, 1, 0, 0, tempCanvas.width);
+                    break;
+            }
+
+            ctx.drawImage(tempCanvas, 0, 0);
+            
+            this.pages[this.currentPage].outputImage = dst.toDataURL("image/jpeg", 1.0);
+            this.prepareDownloadImage();
+        },        
+        updatePoints() {
+            var overlay = this.$refs.overlay;
+            var ctx = overlay.getContext("2d");
+
+            overlay.width = overlay.width;
+            ctx.clearRect(0, 0, ctx.width, ctx.height);
+            ctx.beginPath();
+            ctx.lineWidth = this.s;
+            ctx.moveTo(this.topLeftX, this.topLeftY);
+            ctx.lineTo(this.topRightX, this.topRightY);
+            ctx.lineTo(this.bottomRightX, this.bottomRightY);
+            ctx.lineTo(this.bottomLeftX, this.bottomLeftY);
+            ctx.lineTo(this.topLeftX, this.topLeftY);
+            ctx.strokeStyle = '#ccc';            
+            ctx.stroke();
+            ctx.closePath();
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(this.topLeftX - this.s * 3, this.topLeftY - this.s * 3, this.s * 6, this.s * 6);
+            ctx.fillRect(this.bottomLeftX - this.s * 3, this.bottomLeftY - this.s * 3, this.s * 6, this.s * 6);
+            ctx.fillRect(this.topRightX - this.s * 3, this.topRightY - this.s * 3, this.s * 6, this.s * 6);
+            ctx.fillRect(this.bottomRightX - this.s * 3, this.bottomRightY - this.s * 3, this.s * 6, this.s * 6);
+        },
+        hover(e) {
+            // file drag hover
+            e.stopPropagation();
+            e.preventDefault();
+        },
+        drop(e) {
+            if (!e.dataTransfer.files.length) {
+                return;
+            }
+            e.stopPropagation();
+            e.preventDefault();
+            this.processFiles(e.dataTransfer.files);
+        },
+        prepareDownloadImage() {
+            if (this.fileName) {
+                this.$refs.downloadImage.href = this.$refs.destcanvas.toDataURL("image/jpeg");
+                this.$refs.downloadImage.download = fileName + ".jpg";
+            }
+        },
+        processFiles(files) {
+            const src = this.$refs.sourcecanvas;
+            const dst = this.$refs.destcanvas;
+            const overlay = this.$refs.overlay;
+
+            var file = files[0];
+            var totalFilesToProcess = 0;
+            var filesProcessed = 0;
+
+            this.loading = true;
+
+            for (var i = 0; i < files.length; i++) {
+                var file = files[i];
 
 
-function render() {
-	var src = document.getElementById("sourcecanvas");
-	var dst = document.getElementById("destcanvas");
-	whiteThreshold = document.getElementById("whitethreshold").value;
+                if (file.type.indexOf("image") !== 0) {
+                    continue;
+                }
 
-	var finalWidth = Math.floor(((topRightX + bottomRightX) / 2) - ((topLeftX + bottomLeftX) / 2));
-	var finalHeight = Math.floor(((bottomLeftY + bottomRightY) / 2) - ((topLeftY + topRightY) / 2));
+                totalFilesToProcess += 1;
 
-	dst.width = finalWidth;
-	dst.height = finalHeight;
+                fileName = file.name.substring(0, file.name.lastIndexOf('.'));
 
-	var srcd = src.getContext("2d").getImageData(0, 0, src.width, src.height);
-	var dstd = dst.getContext("2d").getImageData(0, 0, dst.width, dst.height);
+                var reader = new FileReader();
+                reader.onload = (e) => {
+                    var img = new Image();
+                    img.onload = (e) => {
+                        const tempCanvas = document.createElement("canvas");
+                        tempCanvas.width = img.width;
+                        tempCanvas.height = img.height;
+                        const tempCtx = tempCanvas.getContext('2d');
 
-	var sw = src.width;
-	var dw = dst.width;
-	var dh = dst.height;
+                        tempCtx.drawImage(img, 0, 0);
 
-	//processImage(srcd, dstd, sw, dw, dh, topLeftX, topLeftY, bottomLeftX, bottomLeftY, topRightX, topRightY, bottomRightX, bottomRightY);
-	worker.postMessage({
-		srcd: srcd,
-		dstd: dstd,
-		sw: sw,
-		dw: dw,
-		dh: dh,
-		whiteThreshold: whiteThreshold,
-		topLeftX: topLeftX,
-		topLeftY: topLeftY,
-		bottomLeftX: bottomLeftX,
-		bottomLeftY: bottomLeftY,
-		topRightX: topRightX,
-		topRightY: topRightY,
-		bottomRightX: bottomRightX,
-		bottomRightY: bottomRightY
-	});
+                        const newPage = {
+                            topLeftX: this.offset,
+                            topLeftY: this.offset,
+                            topRightX: img.width - this.offset,
+                            topRightY: this.offset,
+                            bottomLeftX: this.offset,
+                            bottomLeftY: img.height - this.offset,
+                            bottomRightX: img.width - this.offset,
+                            bottomRightY: img.height - this.offset,
+                            inputWidth: tempCanvas.width,
+                            inputHeight: tempCanvas.height,
+                            rotation: 0,
+                            fileName: fileName,
+                            whiteThreshold: 100,
+                            image: tempCanvas.toDataURL('image/jpeg', 1.0)
+                        }
 
+                        this.pages.push(newPage);
+                        this.currentPage = this.pages.length - 1;
 
-	//var ctx = dst.getContext("2d");
-	//ctx.putImageData(dstd, 0, 0);
+                        filesProcessed += 1;
+                        if (filesProcessed === totalFilesToProcess) {
+                            this.loading = false;
+                        }
 
-}
+                    };
+                    img.src = e.target.result;
 
-function finishRender(e) {
-	var dst = document.getElementById("destcanvas");
+                };
+                reader.readAsDataURL(file);
 
-	var ctx = dst.getContext("2d");
-	ctx.putImageData(e.data.dstd, 0, 0);
-	prepareDownloadImage();
+            }
 
-}
+            if (totalFilesToProcess === 0) {
+                this.loading = false;
+                this.$buefy.dialog.alert({
+                    title: 'Error',
+                    message: "Please upload image files only.",
+                    type: 'is-danger',
+                    hasIcon: true,
+                    icon: 'times-circle',
+                    iconPack: 'fa',
+                    ariaRole: 'alertdialog',
+                    ariaModal: true
+                })
+            }
 
-function processImage(srcd, dstd, sw, dw, dh, whiteThreshold, topLeftX, topLeftY, bottomLeftX, bottomLeftY, topRightX, topRightY, bottomRightX, bottomRightY) {
+        },
+        downloadPDF(e) {            
+            var pdf = new jsPDF();
+            var margin = 0;
 
-	for (var y = 0; y < dh; y++) {
+            for (var i = 0; i < this.pages.length; i++) {
+                var imgData = this.pages[i].outputImage;
 
-		var dy = y / dh;
+                var width = pdf.internal.pageSize.width - margin * 2;
+                var height = pdf.internal.pageSize.height - margin * 2;
 
-		var startX = topLeftX + dy*(bottomLeftX-topLeftX);
-		var startY = topLeftY + dy*(bottomLeftY-topLeftY);
+                var pdfRatio = height / width;
+                var currentRatio = this.pages[i].outputHeight / this.pages[i].outputWidth;
 
-		var endX = topRightX + dy*(bottomRightX-topRightX);
-		var endY = topRightY + dy*(bottomRightY-topRightY);
+                if (pdfRatio > currentRatio) {
+                    pdf.addImage(imgData, 'JPEG', margin, margin, width, width * currentRatio);
+                } else {
+                    pdf.addImage(imgData, 'JPEG', margin + (width - height / currentRatio) / 2, margin, height / currentRatio, height);
+                }
 
-		for (var x = 0; x < dw; x++) {
-			var dx = x / dw;
+                if (i !== this.pages.length - 1) {
+                    pdf.addPage();
+                }
 
-			var pointX = Math.floor(startX + dx*(endX-startX));
-			var pointY = Math.floor(startY + dx*(endY-startY));
-
-			var dstxy = (y*dw+x)*4;
-			var srcxy = (pointY*sw+pointX)*4;
-
-			if (((srcd.data[srcxy+0] + srcd.data[srcxy+1] + srcd.data[srcxy+2]) / 3) > whiteThreshold) {
-				dstd.data[dstxy+0] = 255;
-				dstd.data[dstxy+1] = 255;
-				dstd.data[dstxy+2] = 255;
-				dstd.data[dstxy+3] = 255;
-			} else {
-				dstd.data[dstxy+0] = srcd.data[srcxy+0];
-				dstd.data[dstxy+1] = srcd.data[srcxy+1];
-				dstd.data[dstxy+2] = srcd.data[srcxy+2];
-				dstd.data[dstxy+3] = srcd.data[srcxy+3];
-
-			}
-		}
-	}
-
-}
-
-
-function updatePoints() {
-
-	var overlay = document.getElementById("overlay");
-	var ctx = overlay.getContext("2d");
-	var s = 15;
+            }
 
 
-	overlay.width = overlay.width;
-	ctx.clearRect(0, 0, ctx.width, ctx.height);
-	ctx.beginPath();
-	ctx.lineWidth=s;
-	ctx.moveTo(topLeftX, topLeftY);
-	ctx.lineTo(topRightX,topRightY);
-	ctx.lineTo(bottomRightX,bottomRightY);
-	ctx.lineTo(bottomLeftX,bottomLeftY);
-	ctx.lineTo(topLeftX, topLeftY);
-	ctx.stroke();
-	ctx.closePath();
-	ctx.fillStyle="#fff";
-	ctx.fillRect(topLeftX-s*3, topLeftY-s*3, s*6, s*6);
-	ctx.fillRect(bottomLeftX-s*3, bottomLeftY-s*3, s*6, s*6);
-	ctx.fillRect(topRightX-s*3, topRightY-s*3, s*6, s*6);
-	ctx.fillRect(bottomRightX-s*3, bottomRightY-s*3, s*6, s*6);
+            pdf.save("ImageToScan.pdf");
+        },
+        uploadFile(e) {
+            processFiles(e.target.files);
+        },
+        down(e) {
+            e.preventDefault();
+            const pos = getMousePos(this.$refs.sourcecanvas, e);
 
-};
+            if (
+                (pos.x > this.topLeftX - this.sen) && 
+                (pos.y > this.topLeftY - this.sen) && 
+                (pos.x < this.topLeftX + this.sen) && 
+                (pos.y < this.topLeftY + this.sen)) {
+                this.dragging = "topleft";
+            }
+            if (
+                (pos.x > this.topRightX - this.sen) && 
+                (pos.y > this.topRightY - this.sen) && 
+                (pos.x < this.topRightX + this.sen) && 
+                (pos.y < this.topRightY + this.sen)) {
+                this.dragging = "topright";
+            }
+            if (
+                (pos.x > this.bottomLeftX - this.sen) && 
+                (pos.y > this.bottomLeftY - this.sen) && 
+                (pos.x < this.bottomLeftX + this.sen) && 
+                (pos.y < this.bottomLeftY + this.sen)) {
+                this.dragging = "bottomleft";
+            }
+            if (
+                (pos.x > this.bottomRightX - this.sen) && 
+                (pos.y > this.bottomRightY - this.sen) && 
+                (pos.x < this.bottomRightX + this.sen) && 
+                (pos.y < this.bottomRightY + this.sen)) {
+                this.dragging = "bottomright";
+            }
+            this.updatePoints();
+        },
+        move(e) {
+            e.preventDefault();
+            const overlay = this.$refs.overlay;
 
-function getOrientation(file, callback) {
-  var reader = new FileReader();
-  reader.onload = function(e) {
+            const pos = getMousePos(this.$refs.sourcecanvas, e);
 
-    var view = new DataView(e.target.result);
-    if (view.getUint16(0, false) != 0xFFD8) return callback(-2);
-    var length = view.byteLength, offset = 2;
-    while (offset < length) {
-      var marker = view.getUint16(offset, false);
-      offset += 2;
-      if (marker == 0xFFE1) {
-        if (view.getUint32(offset += 2, false) != 0x45786966) return callback(-1);
-        var little = view.getUint16(offset += 6, false) == 0x4949;
-        offset += view.getUint32(offset + 4, little);
-        var tags = view.getUint16(offset, little);
-        offset += 2;
-        for (var i = 0; i < tags; i++)
-          if (view.getUint16(offset + (i * 12), little) == 0x0112)
-            return callback(view.getUint16(offset + (i * 12) + 8, little));
-      }
-      else if ((marker & 0xFF00) != 0xFF00) break;
-      else offset += view.getUint16(offset, false);
+            if (
+                (pos.x > this.topLeftX - this.sen) && 
+                (pos.y > this.topLeftY - this.sen) && 
+                (pos.x < this.topLeftX + this.sen) && 
+                (pos.y < this.topLeftY + this.sen)) {
+                overlay.style.cursor = "pointer";
+            } else if (
+                (pos.x > this.topRightX - this.sen) && 
+                (pos.y > this.topRightY - this.sen) && 
+                (pos.x < this.topRightX + this.sen) && 
+                (pos.y < this.topRightY + this.sen)) {
+                overlay.style.cursor = "pointer";
+            } else if (
+                (pos.x > this.bottomLeftX - this.sen) && 
+                (pos.y > this.bottomLeftY - this.sen) && 
+                (pos.x < this.bottomLeftX + this.sen) && 
+                (pos.y < this.bottomLeftY + this.sen)) {
+                overlay.style.cursor = "pointer";
+            } else if (
+                (pos.x > this.bottomRightX - this.sen) && 
+                (pos.y > this.bottomRightY - this.sen) && 
+                (pos.x < this.bottomRightX + this.sen) && 
+                (pos.y < this.bottomRightY + this.sen)) {
+                overlay.style.cursor = "pointer";
+            } else {
+                overlay.style.cursor = "inherit";
+            }
+
+            if (this.dragging) {
+                if (this.dragging === "topleft") {
+                    this.topLeftX = pos.x;
+                    this.topLeftY = pos.y;
+                    this.pages[this.currentPage].topLeftX = pos.x;
+                    this.pages[this.currentPage].topLeftY = pos.y;
+
+                }
+                if (this.dragging === "topright") {
+                    this.topRightX = pos.x;
+                    this.topRightY = pos.y;
+                    this.pages[this.currentPage].topRightX = pos.x;
+                    this.pages[this.currentPage].topRightY = pos.y;
+                }
+                if (this.dragging === "bottomleft") {
+                    this.bottomLeftX = pos.x;
+                    this.bottomLeftY = pos.y;
+                    this.pages[this.currentPage].bottomLeftX = pos.x;
+                    this.pages[this.currentPage].bottomLeftY = pos.y;
+                }
+                if (this.dragging === "bottomright") {
+                    this.bottomRightX = pos.x;
+                    this.bottomRightY = pos.y;
+                    this.pages[this.currentPage].bottomRightX = pos.x;
+                    this.pages[this.currentPage].bottomRightY = pos.y;
+                }
+                this.updatePoints();
+            }
+        },
+        up(e) {
+            if (!this.dragging) {
+                return
+            }
+            e.preventDefault();
+
+            this.dragging = null;
+            this.updatePoints();
+            this.render();
+        },
+        selectPage(index) {
+            this.currentPage = index;
+        }
+    },
+    watch: {
+        whiteThreshold(val) {
+            const pageData = this.pages[this.currentPage];
+            pageData.whiteThreshold = val;
+            this.render();
+        },
+        rotation(val) {
+            const pageData = this.pages[this.currentPage];
+            pageData.rotation = val;
+            this.render();
+        },
+        currentPage(newPage) {
+            const pageData = this.pages[newPage];
+
+            this.topLeftX = pageData.topLeftX;
+            this.topLeftY = pageData.topLeftY;
+            this.topRightX = pageData.topRightX;
+            this.topRightY = pageData.topRightY;
+            this.bottomLeftX = pageData.bottomLeftX;
+            this.bottomLeftY = pageData.bottomLeftY;
+            this.bottomRightX = pageData.bottomRightX;
+            this.bottomRightY = pageData.bottomRightY;
+            this.rotation = pageData.rotation;
+            this.fileName = pageData.fileName;
+            this.whiteThreshold = pageData.whiteThreshold;
+            
+            const src = this.$refs.sourcecanvas;
+            const dst = this.$refs.destcanvas;
+            const overlay = this.$refs.overlay;
+
+            const ctx = src.getContext('2d');
+            const img = new Image();
+            img.onload = () => {
+                src.width = img.width;
+                src.height = img.height;
+
+                // copy dst attributes
+                dst.width = src.width;
+                dst.height = src.height;
+                overlay.width = src.width;
+                overlay.height = src.height;
+
+
+                ctx.drawImage(img, 0, 0);
+
+                this.render();
+                this.updatePoints();
+            };
+            img.src = pageData.image;
+
+        }
     }
-    return callback(-1);
-  };
-  reader.readAsArrayBuffer(file);
-}
 
-function hover(e) {
-	// file drag hover
-	e.stopPropagation();
-	e.preventDefault();
-	e.target.className = (e.type == "dragover" ? "hover" : "");
-}
-
-function prepareDownloadImage() {
-	var dst = document.getElementById("destcanvas");
-	var downloadImage = document.getElementById("download-image");
-
-	if (fileName) {
-		downloadImage.href = dst.toDataURL("image/jpeg");
-		downloadImage.download = fileName + ".jpg";
-	}
-}
-
-
-document.addEventListener("DOMContentLoaded", function() {
-	var src = document.getElementById("sourcecanvas");
-	var dst = document.getElementById("destcanvas");
-	var overlay = document.getElementById("overlay");
-	var cc = document.getElementById("canvascontainer");
-
-	worker = new Worker("./imageWorker.js");
-    worker.onmessage = finishRender;
-
-
-
-
-	document.getElementById("download-pdf").addEventListener("click", function(e) {
-		var imgData = dst.toDataURL("image/jpeg", 1.0);
-		var pdf = new jsPDF();
-		var margin = 0;
-
-		var width = pdf.internal.pageSize.width - margin*2;
-		var height = pdf.internal.pageSize.height - margin*2;
-
-		var pdfRatio = height / width;
-		var currentRatio = dst.height / dst.width;
-
-		console.log("page width: " + width);
-		console.log("page height: " + height);
-		console.log("image width: " + dst.width);
-		console.log("image height: " + dst.height);
-		console.log("page ratio: " + pdfRatio);
-		console.log("image ratio: " + currentRatio);
-
-		if (pdfRatio > currentRatio) {
-			pdf.addImage(imgData, 'JPEG', margin, margin, width, width * currentRatio);
-		} else {
-			pdf.addImage(imgData, 'JPEG', margin + (width - height / currentRatio) / 2, margin, height / currentRatio, height);
-		}
-
-		pdf.save(fileName + ".pdf");
-	});
-
-	function processFiles(files) {
-
-		if (files.length != 1) {
-			alert("Please drag and drop one file");
-			return;
-		}
-
-		var file = files[0];
-		if (file.type.indexOf("image") != 0) {
-			alert("Please drop an image");
-			return;
-		}
-
-		fileName = file.name.substring(0, file.name.lastIndexOf('.'));
-
-		var reader = new FileReader();
-		reader.onload = function(e) {
-			var img = new Image();
-			img.onload = function(e) {
-				src.width = img.width;
-				src.height = img.height;
-				var ctx = src.getContext("2d");
-
-				// copy dst attributes
-				dst.width = src.width;
-				dst.height = src.height;
-				overlay.width = src.width;
-				overlay.height = src.height;
-
-				ctx.drawImage(img, 0, 0);
-				// ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-				topLeftX = offset;
-				topLeftY = offset;
-				topRightX = dst.width - offset;
-				topRightY = offset;
-				bottomLeftX = offset;
-				bottomLeftY = dst.height - offset;
-				bottomRightX = dst.width - offset;
-				bottomRightY = dst.height - offset;
-
-				updatePoints();
-				render();
-
-
-			};
-			img.src = e.target.result;
-
-		};
-		reader.readAsDataURL(file);
-
-	}
-
-	document.getElementById("upload-file").addEventListener("change", function(e) {
-		var files = e.target.files;
-		processFiles(files);
-	});
-
-	overlay.addEventListener("dragover", hover, false);
-	overlay.addEventListener("dragleave", hover, false);
-
-	overlay.addEventListener("drop", function(e) {
-		e.stopPropagation();
-		e.preventDefault();
-		e.target.classList.remove("hover");
-
-		processFiles(e.dataTransfer.files);
-	});
-
-	overlay.addEventListener("mousedown", down);
-	overlay.addEventListener("touchstart", down);
-	overlay.addEventListener("mousemove", move);
-	overlay.addEventListener("touchmove", move);
-	window.addEventListener("mouseup", up);
-	window.addEventListener("touchend", up);
-	window.addEventListener("touchcancel", up);
-
-	function down(e) {
-		e.preventDefault();
-		var pos = getMousePos(src, e);
-		var sen = 40;
-		if ((pos.x > topLeftX - sen) && (pos.y > topLeftY - sen) && (pos.x < topLeftX + sen) && (pos.y < topLeftY + sen)) {
-			dragging = "topleft";
-		}
-		if ((pos.x > topRightX - sen) && (pos.y > topRightY - sen) && (pos.x < topRightX + sen) && (pos.y < topRightY + sen)) {
-			dragging = "topright";
-		}
-		if ((pos.x > bottomLeftX - sen) && (pos.y > bottomLeftY - sen) && (pos.x < bottomLeftX + sen) && (pos.y < bottomLeftY + sen)) {
-			dragging = "bottomleft";
-		}
-		if ((pos.x > bottomRightX - sen) && (pos.y > bottomRightY - sen) && (pos.x < bottomRightX + sen) && (pos.y < bottomRightY + sen)) {
-			dragging = "bottomright";
-		}
-		updatePoints();
-	}
-
-	function move(e) {
-		e.preventDefault();
-
-		var pos = getMousePos(src, e);
-		var sen = 40;
-		if ((pos.x > topLeftX - sen) && (pos.y > topLeftY - sen) && (pos.x < topLeftX + sen) && (pos.y < topLeftY + sen)) {
-			overlay.style.cursor = "pointer";
-		}
-		else if ((pos.x > topRightX - sen) && (pos.y > topRightY - sen) && (pos.x < topRightX + sen) && (pos.y < topRightY + sen)) {
-			overlay.style.cursor = "pointer";
-		}
-		else if ((pos.x > bottomLeftX - sen) && (pos.y > bottomLeftY - sen) && (pos.x < bottomLeftX + sen) && (pos.y < bottomLeftY + sen)) {
-			overlay.style.cursor = "pointer";
-		}
-		else if ((pos.x > bottomRightX - sen) && (pos.y > bottomRightY - sen) && (pos.x < bottomRightX + sen) && (pos.y < bottomRightY + sen)) {
-			overlay.style.cursor = "pointer";
-		} else {
-			overlay.style.cursor = "inherit";
-		}
-
-
-
-		if (dragging) {
-			var pos = getMousePos(src, e);
-			if (dragging === "topleft") {
-				topLeftX = pos.x;
-				topLeftY = pos.y;
-			}
-			if (dragging === "topright") {
-				topRightX = pos.x;
-				topRightY = pos.y;
-			}
-			if (dragging === "bottomleft") {
-				bottomLeftX = pos.x;
-				bottomLeftY = pos.y;
-			}
-			if (dragging === "bottomright") {
-				bottomRightX = pos.x;
-				bottomRightY = pos.y;
-			}
-			updatePoints();
-		}
-	}
-
-	function up(e) {
-		if (!dragging) {
-			return
-		}
-		e.preventDefault();
-
-		dragging = null;
-		updatePoints();
-		render();
-	}
-
-
-});
+})
