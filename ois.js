@@ -247,7 +247,13 @@ new Vue({
                 var height = pdf.internal.pageSize.height - margin * 2;
 
                 var pdfRatio = height / width;
-                var currentRatio = this.pages[i].outputHeight / this.pages[i].outputWidth;
+                var currentRatio = null;
+
+                if (this.pages[i].rotation === 90 || this.pages[i].rotation === 270) {
+                    currentRatio = this.pages[i].outputWidth / this.pages[i].outputHeight;
+                } else {
+                    currentRatio = this.pages[i].outputHeight / this.pages[i].outputWidth;
+                }
 
                 if (pdfRatio > currentRatio) {
                     pdf.addImage(imgData, 'JPEG', margin, margin, width, width * currentRatio);
