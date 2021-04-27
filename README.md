@@ -1,5 +1,7 @@
 # ScanDoc
 
+![ScanDoc](https://raw.githubusercontent.com/ronreiter/imagetoscan/main/ScanDoc-screenshot.png)
+
 ScanDoc is best described as an open-source alternative to CamScanner.
 
 ScanDoc is a service that allows you to convert photos of documents into scanned copies in either an image format or PDF format. The tool also allows to correct brightness issues so that the scanned copy will be created in a crisp and clear manner.
