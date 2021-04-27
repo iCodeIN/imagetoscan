@@ -28,7 +28,7 @@ new Vue({
         fileName: null,
         whiteThreshold: 100,
 
-        offset: 200,
+        offsetPercent: 0.1,
         dragging: null,
         worker: null,
         sen: 60,
@@ -141,7 +141,7 @@ new Vue({
             ctx.lineTo(this.bottomRightX, this.bottomRightY);
             ctx.lineTo(this.bottomLeftX, this.bottomLeftY);
             ctx.lineTo(this.topLeftX, this.topLeftY);
-            ctx.strokeStyle = '#ccc';            
+            ctx.strokeStyle = '#333';            
             ctx.stroke();
             ctx.closePath();
 
@@ -154,7 +154,7 @@ new Vue({
 
             for (const point of points) {
                 ctx.beginPath();
-                ctx.fillStyle = "#fff";
+                ctx.fillStyle = "#333";
                 ctx.arc(point[0], point[1], this.sen, 0, 2 * Math.PI, false);
                 ctx.fill();
                 ctx.closePath();
@@ -214,15 +214,16 @@ new Vue({
 
                         tempCtx.drawImage(img, 0, 0);
 
+                        const offset = this.offsetPercent * img.width;
                         const newPage = {
-                            topLeftX: this.offset,
-                            topLeftY: this.offset,
-                            topRightX: img.width - this.offset,
-                            topRightY: this.offset,
-                            bottomLeftX: this.offset,
-                            bottomLeftY: img.height - this.offset,
-                            bottomRightX: img.width - this.offset,
-                            bottomRightY: img.height - this.offset,
+                            topLeftX: offset,
+                            topLeftY: offset,
+                            topRightX: img.width - offset,
+                            topRightY: offset,
+                            bottomLeftX: offset,
+                            bottomLeftY: img.height - offset,
+                            bottomRightX: img.width - offset,
+                            bottomRightY: img.height - offset,
                             inputWidth: tempCanvas.width,
                             inputHeight: tempCanvas.height,
                             rotation: 0,
@@ -339,9 +340,10 @@ new Vue({
 
             }
             this.updatePoints();
+
+            return true;
         },
         move(e) {
-            e.preventDefault();
             const overlay = this.$refs.overlay;
 
             const pos = getMousePos(this.$refs.sourcecanvas, e);
@@ -352,24 +354,32 @@ new Vue({
                 (pos.x < this.topLeftX + this.sen) && 
                 (pos.y < this.topLeftY + this.sen)) {
                 overlay.style.cursor = "pointer";
+                e.preventDefault();
+
             } else if (
                 (pos.x > this.topRightX - this.sen) && 
                 (pos.y > this.topRightY - this.sen) && 
                 (pos.x < this.topRightX + this.sen) && 
                 (pos.y < this.topRightY + this.sen)) {
                 overlay.style.cursor = "pointer";
+                e.preventDefault();
+
             } else if (
                 (pos.x > this.bottomLeftX - this.sen) && 
                 (pos.y > this.bottomLeftY - this.sen) && 
                 (pos.x < this.bottomLeftX + this.sen) && 
                 (pos.y < this.bottomLeftY + this.sen)) {
                 overlay.style.cursor = "pointer";
+                e.preventDefault();
+
             } else if (
                 (pos.x > this.bottomRightX - this.sen) && 
                 (pos.y > this.bottomRightY - this.sen) && 
                 (pos.x < this.bottomRightX + this.sen) && 
                 (pos.y < this.bottomRightY + this.sen)) {
                 overlay.style.cursor = "pointer";
+                e.preventDefault();
+
             } else {
                 overlay.style.cursor = "inherit";
             }
@@ -380,6 +390,7 @@ new Vue({
                     this.topLeftY = pos.y;
                     this.pages[this.currentPage].topLeftX = pos.x;
                     this.pages[this.currentPage].topLeftY = pos.y;
+                    e.preventDefault();
 
                 }
                 if (this.dragging === "topright") {
@@ -387,18 +398,24 @@ new Vue({
                     this.topRightY = pos.y;
                     this.pages[this.currentPage].topRightX = pos.x;
                     this.pages[this.currentPage].topRightY = pos.y;
+                    e.preventDefault();
+
                 }
                 if (this.dragging === "bottomleft") {
                     this.bottomLeftX = pos.x;
                     this.bottomLeftY = pos.y;
                     this.pages[this.currentPage].bottomLeftX = pos.x;
                     this.pages[this.currentPage].bottomLeftY = pos.y;
+                    e.preventDefault();
+
                 }
                 if (this.dragging === "bottomright") {
                     this.bottomRightX = pos.x;
                     this.bottomRightY = pos.y;
                     this.pages[this.currentPage].bottomRightX = pos.x;
                     this.pages[this.currentPage].bottomRightY = pos.y;
+                    e.preventDefault();
+
                 }
                 this.updatePoints();
             }

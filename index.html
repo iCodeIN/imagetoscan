@@ -46,7 +46,7 @@
 
         #overlay {
             cursor: pointer;
-            opacity: 0.5;
+            opacity: 0.75;
         }
 
         #instructions {
@@ -91,19 +91,23 @@
     <b-loading :is-full-page="true" v-model="loading" :can-cancel="true"></b-loading>
 
 
-    <b-navbar type="is-dark">
+    <b-navbar type="is-dark" fixed-top>
         <template slot="brand">
             <b-navbar-item href="/">
                 <img src="scandoc.png" style="height: 30px;" class="mr-3"> <strong>ScanDoc</strong>
             </b-navbar-item>
+            <b-navbar-item @click="downloadPDF" v-if="pages.length > 0">
+                <i class="fas fa-file-pdf mr-2"></i> Download PDF
+            </b-navbar-item>
+
         </template>
         <template slot="start">
-            <b-navbar-item href="#faq">
-                <i class="fas fa-question mr-2"></i> FAQ
-            </b-navbar-item>
         </template>
 
         <template slot="end">
+            <b-navbar-item href="#faq">
+                <i class="fas fa-question mr-2"></i> FAQ
+            </b-navbar-item>
             <b-navbar-item href="https://github.com/ronreiter/imagetoscan">
                 <i class="fab fa-github mr-2"></i> GitHub
             </b-navbar-item>
