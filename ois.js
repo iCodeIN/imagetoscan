@@ -55,6 +55,10 @@ new Vue({
 
 
         },
+        checkMove(evt) {
+            console.log(evt.draggedContext.element.index);
+            return true;
+        },
         render() {
             var src = this.$refs.sourcecanvas;
             var dst = this.$refs.destcanvas;

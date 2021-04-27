@@ -1,18 +1,18 @@
 <html>
 <head>
-    <title>ImageToScan.com</title>
-    <meta name="description" content="Convert photos into scanned PDF documents">
+    <title>Scandoc.io - Scan Documents Online</title>
+    <meta name="description" content="Scan documents online and convert photos into scanned PDF documents for free">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <meta property="og:title" content="ImageToScan.com"/>
-    <meta property="og:url" content="http://www.imagetoscan.com/"/>
-    <meta property="og:image" content="http://www.imagetoscan.com/ois-logo-fb.png"/>
-    <meta property="og:description" content="Convert photos into scanned PDF documents"/>
+    <meta property="og:title" content="Scandoc.io - Scan Documents Online"/>
+    <meta property="og:url" content="http://www.scandoc.io/"/>
+    <meta property="og:image" content="http://www.scandoc.io/ois-logo-fb.png"/>
+    <meta property="og:description" content="Scan documents online and convert photos into scanned PDF documents for free"/>
 
     <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.14.0/css/all.css">
 
-    <link rel="icon" href="ois.png"/>
+    <link rel="icon" href="scandoc.png"/>
 
     <style>
         canvas {
@@ -90,11 +90,10 @@
     <b-loading :is-full-page="true" v-model="loading" :can-cancel="true"></b-loading>
 
 
-    <b-navbar type="is-light">
+    <b-navbar type="is-dark">
         <template slot="brand">
             <b-navbar-item href="/">
-                <img src="ois-logo.png" style="height: 30px;" class="mr-3">
-                <strong>ImageToScan</strong>.com
+                <img src="scandoc.png" style="height: 30px;" class="mr-3"> <strong>ScanDoc</strong>
             </b-navbar-item>
         </template>
         <template slot="start">
@@ -123,25 +122,21 @@
 
     </b-navbar>
 
-
+<div class="content p-6 has-background-light" style="border-bottom: 1px solid #ddd">
+    <div class="columns">
+        <div class="column is-3">
+            <img src="scandoc.png" style="height: 120px; margin: 0 auto; display: block">
+        </div>
+        <div class="column is-9 py-5">
+            <h1><strong>ScanDoc</strong></h1>
+            <h4>Scan documents online and convert photos into scanned PDF documents for free!</h4>     
+        
+        </div>
+    </div>
+</div>
 
 
 <div class="container">
-
-    <div class="content mt-5 px-3">
-        <div class="columns">
-            <div class="column is-3">
-                <img src="ois-logo.png" style="height: 120px; margin: 0 auto; display: block">
-            </div>
-            <div class="column is-9 py-5">
-                <h2><strong>ImageToScan</strong>.com</h4>
-                <h4>Convert photos into scanned PDF documents for free!</h4>     
-            
-            </div>
-        </div>
-    </div>
-
-
     <div class="columns content px-3">
         <div class="column">
             <h3 class="title is-3 my-3">1. Upload</h3>
@@ -149,7 +144,10 @@
             <p>Select an image by dragging & dropping it or by using the Upload button.</p>
             <div class="my-3">
                 <label class="button is-primary is-small">
-                    <i class="fas fa-upload mr-2"></i> Upload Image <input type="file" id="upload-file" @change="uploadFile" style="display: none;">
+                    <i class="fas fa-upload mr-2"></i> Upload Photos <input type="file" accept="image/*" multiple @change="uploadFile" style="display: none;">
+                </label>
+                <label class="button is-primary is-small">
+                    <i class="fas fa-camera mr-2"></i> Scan <input type="file" accept="image/*" capture="camera" @change="uploadFile" style="display: none;">
                 </label>
                 <a id="delete-page" class="button is-danger is-small" @click="deletePage" :disabled="!pages.length"><i class="fas fa-trash mr-2"></i> Delete Page</a>
 
@@ -160,8 +158,8 @@
                     <span><i class="fas fa-cloud-upload-alt"></i></span>
                     <span>Drag and drop an image here</span>
                 </div>
-                <draggable v-if="pages.length" class="page-container" v-model="pages">
-                    <div v-for="page, index in pages">
+                <draggable v-if="pages.length" class="page-container" v-model="pages" :move="checkMove">
+                    <div v-for="page, index in pages" :index="index">
                         <div class="page" :class="{'selected': index === currentPage }" @click="selectPage(index)" :style="{'background-image': 'url(' + page.image + ')'}">
                             
                         </div>
@@ -214,20 +212,22 @@
         </div>
     </div>
 
-    <div class="columns content px-3">
+    <div class="columns content px-3" id="faq">
         <div class="column">
-            <h3 class="is-size-3" id="faq">Frequently Asked Questions</h3>
-            <h4 class="is-size-4 my-3">What is ImageToScan?</h4>
-            <p>ImageToScan is a service that allows you to convert photos of documents into scanned copies in either an image
+            <h2>Frequently Asked Questions (FAQ)</h2>
+            <hr/>
+            <h4>What is ScanDoc?</h4>
+            <p>ScanDoc is a service that allows you to convert photos of documents into scanned copies in either an image
                 format or PDF format. The tool also allows to correct brightness issues so that the scanned copy will be
                 created in a crisp and clear manner.</p>
-            <h4 class="is-size-4 my-3">What is the difference between ImageToScan and CamScanner?</h4>
-            <p>CamScanner is a paid app, which provides the same functionality as ImageToScan.com. ImageToScan is a free service.
-                ImageToScan is used a web application from both desktop and mobile whereas CamScanner is a mobile application, 
+            <h4>What is the difference between ScanDoc and CamScanner?</h4>
+            <p>CamScanner is a paid app, which provides the same functionality as ScanDoc.com. ScanDoc is a free service.
+                ScanDoc is used a web application from both desktop and mobile whereas CamScanner is a mobile application, 
                 which can only be used on mobile devices.
             </p>
-            
-            <h4 class="is-size-4 my-3">How do you convert a photo of a document into a scanned copy?</h4>
+            <h4>Where did ImageToScan go?</h4>
+            <p>ImageToScan.com is now Scandoc.io.</p>
+            <h4>How do you convert a photo of a document into a scanned copy?</h4>
             <p>Converting a photo of a document into a scanned copy is simple. Just follow the steps below:</p>
             <ol>
                 <li>Drag and drop, or upload a photo of a document you wish to convert into a scan.</li>
@@ -236,21 +236,21 @@
                 <li>Rearrange the order of the pages as necessary.</li>
                 <li>Download a scanned version of your document in either PDF or image format.</li>
             </ol>
-            <h4 class="is-size-4 my-3">Does ImageToScan support creating documents with multiple pages?</h4>
+            <h4>Does ScanDoc support creating documents with multiple pages?</h4>
             <p>
                 Yes. Simply drag multiple photos at the same time or upload multiple photos. 
                 Then, you can edit each photo separately and rearrange them as needed.
             </p>
-            <h4 class="is-size-4 my-3">Is this website secure?</h4>
-            <p>ImageToScan.com run on your browser and does not upload any content to any web server.
+            <h4>Is this website secure?</h4>
+            <p>ScanDoc.com run on your browser and does not upload any content to any web server.
                 It is hosted on GitHub and you can see the source <a href="https://github.com/ronreiter/imagetoscan">here</a>.</p>
 
         </div>
     </div>
 
     <hr/>
-    <footer style="color: #666; text-align: center; margin: 30px 0; font-size: 14px">Copyright &copy; ImageToScan.com.
-        For support please contact <a href="mailto:mail@imagetoscan.com">mail@imagetoscan.com</a></footer>
+    <footer style="color: #666; text-align: center; margin: 30px 0; font-size: 14px">Copyright &copy; Scandoc.io.
+        For support please contact <a href="mailto:mail@scandoc.io">mail@scandoc.io</a></footer>
 </div>
     </div>
 
