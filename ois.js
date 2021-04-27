@@ -34,6 +34,7 @@ new Vue({
         sen: 60,
         s: 15,
         margin: 5,
+        handleSizeInverse: 30,
 
         currentPage: null,
     },
@@ -439,7 +440,7 @@ new Vue({
             img.onload = () => {
                 src.width = img.width;
                 src.height = img.height;
-                this.sen = src.width / 40;
+                this.sen = src.width / this.handleSizeInverse;
 
                 // copy dst attributes
                 dst.width = src.width;
