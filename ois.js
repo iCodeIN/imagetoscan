@@ -299,7 +299,6 @@ new Vue({
             this.processFiles(e.target.files);
         },
         down(e) {
-            e.preventDefault();
             const pos = getMousePos(this.$refs.sourcecanvas, e);
 
             if (
@@ -308,6 +307,8 @@ new Vue({
                 (pos.x < this.topLeftX + this.sen) && 
                 (pos.y < this.topLeftY + this.sen)) {
                 this.dragging = "topleft";
+                e.preventDefault();
+
             }
             if (
                 (pos.x > this.topRightX - this.sen) && 
@@ -315,6 +316,8 @@ new Vue({
                 (pos.x < this.topRightX + this.sen) && 
                 (pos.y < this.topRightY + this.sen)) {
                 this.dragging = "topright";
+                e.preventDefault();
+
             }
             if (
                 (pos.x > this.bottomLeftX - this.sen) && 
@@ -322,6 +325,8 @@ new Vue({
                 (pos.x < this.bottomLeftX + this.sen) && 
                 (pos.y < this.bottomLeftY + this.sen)) {
                 this.dragging = "bottomleft";
+                e.preventDefault();
+
             }
             if (
                 (pos.x > this.bottomRightX - this.sen) && 
@@ -329,6 +334,8 @@ new Vue({
                 (pos.x < this.bottomRightX + this.sen) && 
                 (pos.y < this.bottomRightY + this.sen)) {
                 this.dragging = "bottomright";
+                e.preventDefault();
+
             }
             this.updatePoints();
         },
