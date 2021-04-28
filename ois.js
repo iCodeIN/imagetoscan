@@ -327,6 +327,7 @@ new Vue({
             }
             
             download(pdf.output(), "ImageToScan.pdf", "application/pdf");
+            FileSaver.saveAs(pdf.output(), "ImageToScan.pdf");
             //pdf.save("ImageToScan.pdf");
         },
         uploadFile(e) {
