@@ -15,6 +15,11 @@
     <link rel="icon" href="scandoc.png"/>
 
     <style>
+        html, body, #app {
+            width: 100%;
+            overflow-x: hidden;
+        }
+
         canvas {
             width: 100%;
         }
@@ -83,6 +88,7 @@
             border: 3px solid #7957d5;
         }
 
+
     </style>
 </head>
 <body>
@@ -97,7 +103,7 @@
                 <img src="scandoc.png" style="height: 30px;" class="mr-3"> <strong>ScanDoc</strong>
             </b-navbar-item>
             <b-navbar-item>
-                <b-button @click="downloadPDF" type="is-primary" :disabled="!pages.length"><i class="fas fa-file-pdf mr-2"></i> Download PDF</b-button>
+                <b-button @click="downloadPDF" type="is-primary" class="is-small" :disabled="!pages.length"><i class="fas fa-file-pdf mr-2"></i> Download PDF</b-button>
             </b-navbar-item>
 
         </template>
