@@ -127,14 +127,14 @@
 
     </b-navbar>
 
-<div class="content py-6 px-3 has-background-light" style="border-bottom: 1px solid #ddd">
+<div class="content py-5 px-3 has-background-light" style="border-bottom: 1px solid #ddd">
     <div class="container">
 
         <div class="columns">
-            <div class="column is-3">
+            <div class="column is-3 is-hidden-mobile">
                 <img src="scandoc.png" style="height: 120px; margin: 0 auto; display: block">
             </div>
-            <div class="column is-9 py-5">
+            <div class="column is-9 pt-5">
                 <h1><strong>ScanDoc</strong></h1>
                 <h4>Scan documents online and convert photos into scanned PDF documents for free!</h4>     
             
@@ -168,7 +168,7 @@
                 </div>
                 <draggable v-if="pages.length" class="page-container" v-model="pages" :move="checkMove">
                     <div v-for="page, index in pages" :index="index">
-                        <div class="page" :class="{'selected': index === currentPage }" @click="selectPage(index)" :style="{'background-image': 'url(' + page.image + ')'}">
+                        <div class="page" :class="{'selected': index === currentPage }" @click="selectPage(index)" @touchstart="selectPage(index)" :style="{'background-image': 'url(' + page.image + ')'}">
                             
                         </div>
                     </div>

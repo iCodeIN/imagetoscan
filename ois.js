@@ -154,9 +154,11 @@ new Vue({
 
             for (const point of points) {
                 ctx.beginPath();
+                ctx.strokeStyle="#fff";
                 ctx.fillStyle = "#333";
                 ctx.arc(point[0], point[1], this.sen, 0, 2 * Math.PI, false);
                 ctx.fill();
+                ctx.stroke();
                 ctx.closePath();
             }
 
@@ -293,7 +295,6 @@ new Vue({
                 }
 
             }
-
 
             pdf.save("ImageToScan.pdf");
         },
