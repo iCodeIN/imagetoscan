@@ -96,8 +96,8 @@
             <b-navbar-item href="/">
                 <img src="scandoc.png" style="height: 30px;" class="mr-3"> <strong>ScanDoc</strong>
             </b-navbar-item>
-            <b-navbar-item @click="downloadPDF" v-if="pages.length > 0">
-                <i class="fas fa-file-pdf mr-2"></i> Download PDF
+            <b-navbar-item>
+                <b-button @click="downloadPDF" type="is-primary" :disabled="!pages.length"><i class="fas fa-file-pdf mr-2"></i> Download PDF</b-button>
             </b-navbar-item>
 
         </template>
@@ -176,8 +176,8 @@
             </div>
 
             <div class="my-3">
-                <a id="download-pdf" class="button is-primary is-small" @click="downloadPDF" :disabled="!pages.length"><i class="fas fa-file-pdf mr-2"></i> Download PDF</a>
-                <a id="download-image" class="button is-secondary is-small" ref="downloadImage" :disabled="!pages.length"><i class="fas fa-file-image mr-2"></i> Download Image</a>
+                <b-button @click="downloadPDF" type="is-primary" :disabled="!pages.length"><i class="fas fa-file-pdf mr-2"></i> Download PDF</b-button>
+                <a id="download-image" class="button is-secondary" ref="downloadImage" :disabled="!pages.length"><i class="fas fa-file-image mr-2"></i> Download Image</a>
 
             </div>
 

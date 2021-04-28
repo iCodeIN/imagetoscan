@@ -9,6 +9,29 @@ function getMousePos(canvas, evt) {
         y: (y - rect.top) / (rect.bottom - rect.top) * canvas.height
     };
 }
+function download(content, fileName, fileType) {  
+
+    var len = content.length,
+    ab = new ArrayBuffer(len),
+    u8 = new Uint8Array(ab);
+
+    while(len--) u8[len] = content.charCodeAt(len);
+
+    var file = new Blob([ab], { 
+            type: fileType
+    });
+    var reader = new FileReader(); 
+    reader.onload = function() { 
+        var link = document.createElement('a');
+        console.log(reader.result);
+        link.setAttribute('href', reader.result);
+        link.setAttribute('download', fileName);
+        document.body.appendChild(link); 
+        link.click();
+        document.body.removeChild(link);
+        } 
+    reader.readAsDataURL(file); 
+}
 
 new Vue({
     el: "#app",
@@ -295,8 +318,10 @@ new Vue({
                 }
 
             }
-
-            pdf.save("ImageToScan.pdf");
+            
+            download(pdf.output(), "ImageToScan.pdf", "application/pdf");
+            //debugger;
+            //pdf.save("ImageToScan2.pdf");
         },
         uploadFile(e) {
             this.processFiles(e.target.files);
