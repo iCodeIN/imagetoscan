@@ -201,20 +201,24 @@
             <hr/>
             <p>Adjust the white threshold and rotation of the document.</p>
             <div class="columns">
-                <div class="column is-4">
+                <div class="column is-6 my-1">
                     White Threshold
                 </div>
-                <div class="column">
+                <div class="column is-6">
                     <b-slider :min="0" :max="255" v-model="whiteThreshold" lazy>
                 </div>
             </div>
             <div class="columns">
-                <div class="column is-4">
-                    Orientation
+                <div class="column is-6 my-1">
+                    Orientation                     
                 </div>
-                <div class="column">
+                <div class="column is-6">
+                    <b-button type="is-primary is-small" @click="rotateLeft"><i class="fas fa-reply"></i></b-button>
+                    <b-button type="is-primary is-small" @click="rotateRight"><i class="fas fa-share"></i></b-button> 
+                </div>
+                <!-- <div class="column">
                     <b-slider :min="0" :max="270" :step="90" v-model="rotation" lazy></b-slider>
-                </div>                
+                </div>                 -->
             </div>
             <canvas id="destcanvas" ref="destcanvas"></canvas>
         </div>

@@ -186,6 +186,12 @@ new Vue({
             }
 
         },
+        rotateLeft() {
+            this.rotation = (this.rotation + 270) % 360;
+        },
+        rotateRight() {
+            this.rotation = (this.rotation + 90) % 360;
+        },
         hover(e) {
             // file drag hover
             e.stopPropagation();
