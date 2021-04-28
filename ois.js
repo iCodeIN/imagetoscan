@@ -18,17 +18,20 @@ function download(content, fileName, fileType) {
     while(len--) u8[len] = content.charCodeAt(len);
 
     var file = new Blob([ab], { type: fileType });
-    var reader = new FileReader(); 
-    reader.onload = function() { 
-        var link = document.createElement('a');
-        console.log(reader.result);
-        link.href = reader.result;
-        link.download = fileName;
-        document.body.appendChild(link); 
-        link.click();
-        document.body.removeChild(link);
-    }
-    reader.readAsDataURL(file); 
+
+    saveAs(file, fileName);
+
+    // var reader = new FileReader(); 
+    // reader.onload = function() { 
+    //     var link = document.createElement('a');
+    //     console.log(reader.result);
+    //     link.href = reader.result;
+    //     link.download = fileName;
+    //     document.body.appendChild(link); 
+    //     link.click();
+    //     document.body.removeChild(link);
+    // }
+    // reader.readAsDataURL(file); 
 }
 
 new Vue({
@@ -327,7 +330,7 @@ new Vue({
             }
             
             download(pdf.output(), "ImageToScan.pdf", "application/pdf");
-            FileSaver.saveAs(pdf.output(), "ImageToScan.pdf");
+            
             //pdf.save("ImageToScan.pdf");
         },
         uploadFile(e) {
