@@ -220,7 +220,10 @@
                     <b-slider :min="0" :max="270" :step="90" v-model="rotation" lazy></b-slider>
                 </div>                 -->
             </div>
-            <canvas id="destcanvas" ref="destcanvas"></canvas>
+            <div style="position: relative">
+                <b-loading :is-full-page="false" v-model="isLoadingAdjustment" :can-cancel="true"></b-loading>
+                <canvas id="destcanvas" ref="destcanvas"></canvas>
+            </div>
         </div>
     </div>
 

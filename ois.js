@@ -37,6 +37,7 @@ new Vue({
     el: "#app",
     data: {
         loading: false,
+        isLoadingAdjustment: false,
         pages: [],
 
         topLeftX: 0,
@@ -84,6 +85,7 @@ new Vue({
             return true;
         },
         render() {
+            this.isLoadingAdjustment = true;
             var src = this.$refs.sourcecanvas;
             var dst = this.$refs.destcanvas;
 
@@ -117,6 +119,7 @@ new Vue({
             });
         },
         finishRender(e) {
+            this.isLoadingAdjustment = false;
             const dst = this.$refs.destcanvas;
             var ctx = dst.getContext("2d");
 
