@@ -1,3 +1,53 @@
+function convolute(pixels, weights, minX, minY, maxX, maxY) {
+    var side = Math.round(Math.sqrt(weights.length));
+    var halfSide = Math.floor(side/2);
+    var src = pixels.data;
+    var sw = pixels.width;
+    var sh = pixels.height;
+    var highest = 0;
+    var highestX = 0;
+    var highestY = 0;
+    // var midX = sw / 2;
+    // var midY = sh / 2;
+    // var maxSize = Math.sqrt(midX ** 2 + midY **2);
+
+    // go through the destination image pixels
+    for (var y=minY; y<maxY; y++) {
+      for (var x=minX; x<maxX; x++) {
+        var sy = y;
+        var sx = x;
+        // calculate the weighed sum of the source image pixels that
+        // fall under the convolution matrix
+        var r=0, g=0, b=0;
+        for (var cy=0; cy<side; cy++) {
+          for (var cx=0; cx<side; cx++) {
+            var scy = sy + cy - halfSide;
+            var scx = sx + cx - halfSide;
+            var wt = weights[cy*side+cx];
+            if (scy >= 0 && scy < sh && scx >= 0 && scx < sw) {
+              var srcOff = (scy*sw+scx)*4;
+              r += (src[srcOff  ]-128) * wt;
+              g += (src[srcOff+1]-128) * wt;
+              b += (src[srcOff+2]-128) * wt;
+            } else {
+                r += wt * -128;
+                g += wt * -128;
+                b += wt * -128;
+            }
+          }
+        }
+        var total = r + g + b;
+
+        if (total > highest) {
+            highest = total;
+            highestX = x;
+            highestY = y;
+        }
+
+      }
+    }
+    return [highestX, highestY];
+  };
 
 function getMousePos(canvas, evt) {
     const rect = canvas.getBoundingClientRect();
@@ -266,16 +316,74 @@ new Vue({
 
                         tempCtx.drawImage(img, 0, 0);
 
+                        var imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                        var offsetX = tempCanvas.width / 4;
+                        var offsetY = tempCanvas.height / 4;
+                        var offsetXEnd = tempCanvas.width - offsetX;
+                        var offsetYEnd = tempCanvas.height - offsetY;
+
+
+                        var tlweights = [
+                            -1, -1, -1, -1, -1, -1, -1, -1,
+                            -1, -1, -1, -1, -1, -1, -1, -1,
+                            -1, -1, -1, -1, -1, -1, -1, -1,
+                            -1, -1, -1,  0,  0,  0,  0,  0,
+                            -1, -1, -1,  0,  1,  1,  1,  1,
+                            -1, -1, -1,  0,  1,  1,  1,  1,
+                            -1, -1, -1,  0,  1,  1,  1,  1,
+                            -1, -1, -1,  0,  1,  1,  1,  1,
+                        ];
+
+                        [this.topLeftX, this.topLeftY] = convolute(imgData, tlweights, 0, 0, offsetX, offsetY);
+
+                        var blweights = [
+                            -1, -1, -1,  0,  1,  1,  1,  1,
+                            -1, -1, -1,  0,  1,  1,  1,  1,
+                            -1, -1, -1,  0,  1,  1,  1,  1,
+                            -1, -1, -1,  0,  1,  1,  1,  1,
+                            -1, -1, -1,  0,  0,  0,  0,  0,
+                            -1, -1, -1, -1, -1, -1, -1, -1,
+                            -1, -1, -1, -1, -1, -1, -1, -1,
+                            -1, -1, -1, -1, -1, -1, -1, -1,
+                        ];
+
+                        [this.bottomLeftX, this.bottomLeftY] = convolute(imgData, blweights, 0, offsetYEnd, offsetX, tempCanvas.height);
+                        var trweights = [
+                            -1, -1, -1, -1, -1, -1, -1, -1,
+                            -1, -1, -1, -1, -1, -1, -1, -1,
+                            -1, -1, -1, -1, -1, -1, -1, -1,
+                             0,  0,  0,  0,  0, -1, -1, -1,
+                             1,  1,  1,  1,  0, -1, -1, -1,
+                             1,  1,  1,  1,  0, -1, -1, -1,
+                             1,  1,  1,  1,  0, -1, -1, -1,
+                             1,  1,  1,  1,  0, -1, -1, -1,
+                        ];
+
+                        [this.topRightX, this.topRightY] = convolute(imgData, trweights, offsetXEnd, 0, tempCanvas.width, offsetY);
+
+                        var brweights = [
+                             1,  1,  1,  1,  0, -1, -1, -1,
+                             1,  1,  1,  1,  0, -1, -1, -1,
+                             1,  1,  1,  1,  0, -1, -1, -1,
+                             1,  1,  1,  1,  0, -1, -1, -1,
+                             0,  0,  0,  0,  0, -1, -1, -1,
+                            -1, -1, -1, -1, -1, -1, -1, -1,
+                            -1, -1, -1, -1, -1, -1, -1, -1,
+                            -1, -1, -1, -1, -1, -1, -1, -1,
+                        ];
+
+                        [this.bottomRightX, this.bottomRightY] = convolute(imgData, brweights, offsetXEnd, offsetYEnd, tempCanvas.width, tempCanvas.height);
+
                         const offset = this.offsetPercent * img.width;
                         const newPage = {
-                            topLeftX: offset,
-                            topLeftY: offset,
-                            topRightX: img.width - offset,
-                            topRightY: offset,
-                            bottomLeftX: offset,
-                            bottomLeftY: img.height - offset,
-                            bottomRightX: img.width - offset,
-                            bottomRightY: img.height - offset,
+                            topLeftX: this.topLeftX,
+                            topLeftY: this.topLeftY,
+                            topRightX: this.topRightX,
+                            topRightY: this.topRightY,
+                            bottomLeftX: this.bottomLeftX,
+                            bottomLeftY: this.bottomLeftY,
+                            bottomRightX: this.bottomRightX,
+                            bottomRightY: this.bottomRightY,
                             inputWidth: tempCanvas.width,
                             inputHeight: tempCanvas.height,
                             rotation: 0,
@@ -345,10 +453,12 @@ new Vue({
                 }
 
             }
-            
-            download(pdf.output(), "ImageToScan.pdf", "application/pdf");
-            
-            //pdf.save("ImageToScan.pdf");
+                    
+            if(navigator.userAgent.match('CriOS')) {
+                download(pdf.output(), "Scandoc.pdf", "application/pdf");
+            } else {
+                pdf.save("Scandoc.pdf");
+            }
         },
         uploadFile(e) {
             this.processFiles(e.target.files);
