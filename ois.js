@@ -19,14 +19,25 @@ function download(content, fileName, fileType) {
 
     var file = new Blob([ab], { type: fileType });
 
-    saveAs(file, fileName);
-
+    if(navigator.userAgent.match('CriOS')) {
+        var reader = new FileReader();
+        reader.onload = () => {
+            if (typeof reader.result === 'string') {
+              window.location.href = reader.result;
+            }
+        }
+        reader.readAsDataURL(file);    
+    } else {
+        saveAs(file, fileName);
+    }
+    
     // var reader = new FileReader(); 
     // reader.onload = function() { 
     //     var link = document.createElement('a');
     //     console.log(reader.result);
     //     link.href = reader.result;
     //     link.download = fileName;
+    //     link.target = "_blank";
     //     document.body.appendChild(link); 
     //     link.click();
     //     document.body.removeChild(link);
