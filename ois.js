@@ -23,7 +23,13 @@ function download(content, fileName, fileType) {
         var reader = new FileReader();
         reader.onload = () => {
             if (typeof reader.result === 'string') {
-              window.location.href = reader.result;
+                //window.location.href = reader.result;
+                var newWindow = null;
+                newWindow = window.open(reader.result, '_blank');
+                setTimeout(function() {
+                    newWindow.document.title = fileName;
+                }, 10);
+
             }
         }
         reader.readAsDataURL(file);    
