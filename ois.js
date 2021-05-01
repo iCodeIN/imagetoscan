@@ -1,53 +1,156 @@
-function convolute(pixels, weights, minX, minY, maxX, maxY) {
-    var side = Math.round(Math.sqrt(weights.length));
-    var halfSide = Math.floor(side/2);
-    var src = pixels.data;
-    var sw = pixels.width;
-    var sh = pixels.height;
-    var highest = 0;
-    var highestX = 0;
-    var highestY = 0;
-    // var midX = sw / 2;
-    // var midY = sh / 2;
-    // var maxSize = Math.sqrt(midX ** 2 + midY **2);
+function getSafeColor(imgData, data, x, y) {
+    const intX = Math.floor(x);
+    const intY = Math.floor(y);
 
-    // go through the destination image pixels
-    for (var y=minY; y<maxY; y++) {
-      for (var x=minX; x<maxX; x++) {
-        var sy = y;
-        var sx = x;
-        // calculate the weighed sum of the source image pixels that
-        // fall under the convolution matrix
-        var r=0, g=0, b=0;
-        for (var cy=0; cy<side; cy++) {
-          for (var cx=0; cx<side; cx++) {
-            var scy = sy + cy - halfSide;
-            var scx = sx + cx - halfSide;
-            var wt = weights[cy*side+cx];
-            if (scy >= 0 && scy < sh && scx >= 0 && scx < sw) {
-              var srcOff = (scy*sw+scx)*4;
-              r += (src[srcOff  ]-128) * wt;
-              g += (src[srcOff+1]-128) * wt;
-              b += (src[srcOff+2]-128) * wt;
-            } else {
-                r += wt * -128;
-                g += wt * -128;
-                b += wt * -128;
-            }
-          }
-        }
-        var total = r + g + b;
-
-        if (total > highest) {
-            highest = total;
-            highestX = x;
-            highestY = y;
-        }
-
-      }
+    if (intX < 0) {
+        return [0, 0, 0];
     }
-    return [highestX, highestY];
-  };
+    if (intY < 0) {
+        return [0, 0, 0];
+    }
+    if (intX >= imgData.width) {
+        return [0, 0, 0];
+    }
+    if (intY >= imgData.height) {
+        return [0, 0, 0];
+    }
+    const pixel = (intY * imgData.width + intX) * 4;
+    return [
+        data[pixel + 0],
+        data[pixel + 1],
+        data[pixel + 2],
+    ]
+}
+
+function shootRays(imgData, vStart, vEnd, minX, maxX, isHorizontal, step) {
+    let intensity = 0;
+    let startX, startY, endX, endY;
+
+    const data = imgData.data;
+    const angleStep = (Math.PI / 180);
+
+    for (var angle = vStart; angle < vEnd; angle += angleStep) {
+        // invert because Y axis goes down here instead of up
+        const vRayVX = Math.cos(angle);
+        const vRayVY = -Math.sin(angle);
+
+        const vRayLeftX = Math.cos(angle - Math.PI / 2) * step;
+        const vRayLeftY = -Math.sin(angle - Math.PI / 2) * step; 
+
+        for (var c = minX; c < maxX; c += step) {
+            var vRayX = isHorizontal ? c : 0;
+            var vRayY = isHorizontal ? 0 : c;
+            var vLength = 0;
+            var vRayDiffSum = 0;
+
+            while (vRayX >= 0 && vRayY >= 0 && vRayX < imgData.width && vRayY < imgData.height) {
+                vLength += step;
+                const left = getSafeColor(imgData, data, vRayX - vRayLeftX, vRayY - vRayLeftY);
+                const right = getSafeColor(imgData, data, vRayX + vRayLeftX, vRayY + vRayLeftY);
+                const diff = (left[0] - right[0]) ** 2 + (left[1] - right[1]) ** 2 + (left[2] - right[2]) ** 2;
+                vRayDiffSum += diff;
+                vRayX += vRayVX;
+                vRayY += vRayVY;
+
+            }
+            if (vLength < 100) {
+                continue;
+            }
+            const currentIntensity = vRayDiffSum;
+
+            if (currentIntensity > intensity) {
+                intensity = currentIntensity;
+                startX = isHorizontal ? c : 0;
+                startY = isHorizontal ? 0 : c;
+                endX = vRayX;
+                endY = vRayY;
+            }        
+        }
+    }
+
+    return [startX, startY, endX, endY];
+}
+
+function getIntersection(firstLine, secondLine) {
+    var line1StartX, line1StartY, line1EndX, line1EndY, line2StartX, line2StartY, line2EndX, line2EndY;
+    [line1StartX, line1StartY, line1EndX, line1EndY] = firstLine;
+    [line2StartX, line2StartY, line2EndX, line2EndY] = secondLine;
+
+    // if the lines intersect, the result contains the x and y of the intersection (treating the lines as infinite) and booleans for whether line segment 1 or line segment 2 contain the point
+    var denominator, a, b, numerator1, numerator2, result = {
+        x: null,
+        y: null,
+        onLine1: false,
+        onLine2: false
+    };
+    denominator = ((line2EndY - line2StartY) * (line1EndX - line1StartX)) - ((line2EndX - line2StartX) * (line1EndY - line1StartY));
+    if (denominator == 0) {
+        return result;
+    }
+    a = line1StartY - line2StartY;
+    b = line1StartX - line2StartX;
+    numerator1 = ((line2EndX - line2StartX) * a) - ((line2EndY - line2StartY) * b);
+    numerator2 = ((line1EndX - line1StartX) * a) - ((line1EndY - line1StartY) * b);
+    a = numerator1 / denominator;
+    b = numerator2 / denominator;
+
+    // if we cast these lines infinitely in both directions, they intersect here:
+    result.x = line1StartX + (a * (line1EndX - line1StartX));
+    result.y = line1StartY + (a * (line1EndY - line1StartY));
+/*
+        // it is worth noting that this should be the same as:
+        x = line2StartX + (b * (line2EndX - line2StartX));
+        y = line2StartX + (b * (line2EndY - line2StartY));
+        */
+    // if line1 is a segment and line2 is infinite, they intersect if:
+    if (a > 0 && a < 1) {
+        result.onLine1 = true;
+    }
+    // if line2 is a segment and line1 is infinite, they intersect if:
+    if (b > 0 && b < 1) {
+        result.onLine2 = true;
+    }
+    // if line1 and line2 are segments, they intersect if both of the above are true
+    return [result.x, result.y];
+};
+
+function bound(val, min, max) {
+    return Math.min(Math.max(val, min), max);
+}
+
+function getDocumentBoundaries(imgData) {
+    let topLeftX, topLeftY, topRightX, topRightY, bottomLeftX, bottomLeftY, bottomRightX, bottomRightY;
+
+    const maxWidth = Math.max(imgData.width, imgData.height);
+    const step = maxWidth / 100;
+    const startAngleDown = 254.7 * Math.PI / 180;
+    const endAngleDown = 285.3 * Math.PI / 180;
+    const startAngleLeft = -15.3 * Math.PI / 180;
+    const endAngleLeft = 15.3 * Math.PI / 180;
+
+    const leftLine = shootRays(imgData, startAngleDown, endAngleDown, 0, imgData.width / 2, true, step);
+    const rightLine = shootRays(imgData, startAngleDown, endAngleDown, imgData.width / 2, imgData.width, true, step);
+    const topLine = shootRays(imgData, startAngleLeft, endAngleLeft, 0, imgData.height / 2, false, step);
+    const bottomLine = shootRays(imgData, startAngleLeft, endAngleLeft, imgData.height / 2, imgData.height, false, step);
+    
+    console.log(leftLine, rightLine, topLine, bottomLine);
+    [topLeftX, topLeftY] = getIntersection(leftLine, topLine);
+    [topRightX, topRightY] = getIntersection(rightLine, topLine);
+    [bottomLeftX, bottomLeftY] = getIntersection(leftLine, bottomLine);
+    [bottomRightX, bottomRightY] = getIntersection(rightLine, bottomLine);
+
+    return [
+        bound(topLeftX, 0, imgData.width), 
+        bound(topLeftY, 0, imgData.height), 
+        bound(topRightX, 0, imgData.width), 
+        bound(topRightY, 0, imgData.height), 
+        bound(bottomLeftX, 0, imgData.width), 
+        bound(bottomLeftY, 0, imgData.height), 
+        bound(bottomRightX, 0, imgData.width), 
+        bound(bottomRightY, 0, imgData.height), 
+    ]
+
+}
 
 function getMousePos(canvas, evt) {
     const rect = canvas.getBoundingClientRect();
@@ -317,63 +420,8 @@ new Vue({
                         tempCtx.drawImage(img, 0, 0);
 
                         var imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-                        var offsetX = tempCanvas.width / 4;
-                        var offsetY = tempCanvas.height / 4;
-                        var offsetXEnd = tempCanvas.width - offsetX;
-                        var offsetYEnd = tempCanvas.height - offsetY;
 
-
-                        var tlweights = [
-                            -1, -1, -1, -1, -1, -1, -1, -1,
-                            -1, -1, -1, -1, -1, -1, -1, -1,
-                            -1, -1, -1, -1, -1, -1, -1, -1,
-                            -1, -1, -1,  0,  0,  0,  0,  0,
-                            -1, -1, -1,  0,  1,  1,  1,  1,
-                            -1, -1, -1,  0,  1,  1,  1,  1,
-                            -1, -1, -1,  0,  1,  1,  1,  1,
-                            -1, -1, -1,  0,  1,  1,  1,  1,
-                        ];
-
-                        [this.topLeftX, this.topLeftY] = convolute(imgData, tlweights, 0, 0, offsetX, offsetY);
-
-                        var blweights = [
-                            -1, -1, -1,  0,  1,  1,  1,  1,
-                            -1, -1, -1,  0,  1,  1,  1,  1,
-                            -1, -1, -1,  0,  1,  1,  1,  1,
-                            -1, -1, -1,  0,  1,  1,  1,  1,
-                            -1, -1, -1,  0,  0,  0,  0,  0,
-                            -1, -1, -1, -1, -1, -1, -1, -1,
-                            -1, -1, -1, -1, -1, -1, -1, -1,
-                            -1, -1, -1, -1, -1, -1, -1, -1,
-                        ];
-
-                        [this.bottomLeftX, this.bottomLeftY] = convolute(imgData, blweights, 0, offsetYEnd, offsetX, tempCanvas.height);
-                        var trweights = [
-                            -1, -1, -1, -1, -1, -1, -1, -1,
-                            -1, -1, -1, -1, -1, -1, -1, -1,
-                            -1, -1, -1, -1, -1, -1, -1, -1,
-                             0,  0,  0,  0,  0, -1, -1, -1,
-                             1,  1,  1,  1,  0, -1, -1, -1,
-                             1,  1,  1,  1,  0, -1, -1, -1,
-                             1,  1,  1,  1,  0, -1, -1, -1,
-                             1,  1,  1,  1,  0, -1, -1, -1,
-                        ];
-
-                        [this.topRightX, this.topRightY] = convolute(imgData, trweights, offsetXEnd, 0, tempCanvas.width, offsetY);
-
-                        var brweights = [
-                             1,  1,  1,  1,  0, -1, -1, -1,
-                             1,  1,  1,  1,  0, -1, -1, -1,
-                             1,  1,  1,  1,  0, -1, -1, -1,
-                             1,  1,  1,  1,  0, -1, -1, -1,
-                             0,  0,  0,  0,  0, -1, -1, -1,
-                            -1, -1, -1, -1, -1, -1, -1, -1,
-                            -1, -1, -1, -1, -1, -1, -1, -1,
-                            -1, -1, -1, -1, -1, -1, -1, -1,
-                        ];
-
-                        [this.bottomRightX, this.bottomRightY] = convolute(imgData, brweights, offsetXEnd, offsetYEnd, tempCanvas.width, tempCanvas.height);
-
+                        [this.topLeftX, this.topLeftY, this.topRightX, this.topRightY, this.bottomLeftX, this.bottomLeftY, this.bottomRightX, this.bottomRightY] = getDocumentBoundaries(imgData);
                         const offset = this.offsetPercent * img.width;
                         const newPage = {
                             topLeftX: this.topLeftX,
