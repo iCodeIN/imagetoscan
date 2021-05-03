@@ -31,10 +31,21 @@
             background-color: #f8f8f8;
             overflow-x: scroll;
             overflow-y: hidden;
+            flex-grow: 1;
         }
 
         #pages:hover {
             background-color: #eee;
+        }
+
+        .scroll-button {
+            display: block;
+            height: 120px;
+            width: 25px; 
+            background-color: #7957d5; 
+            line-height: 120px; 
+            text-align: center; 
+            color: white;
         }
 
         #canvascontainer {
@@ -75,7 +86,7 @@
 
         .page {
             cursor: pointer;
-            border: 3px solid gray;
+            border: 3px solid #eee;
             width: 100px;
             height: 100px;
             margin: 10px;
@@ -169,19 +180,24 @@
 
             </div>
 
-            <div id="pages" @dragover="hover" @dragleave="hover" @drop="drop">
-                <div id="instructions" v-if="!pages.length">
-                    <span><i class="fas fa-cloud-upload-alt"></i></span>
-                    <span>Drag and drop an image here</span>
-                </div>
-                <draggable v-if="pages.length" class="page-container" v-model="pages" :move="checkMove">
-                    <div v-for="page, index in pages" :index="index">
-                        <div class="page" :class="{'selected': index === currentPage }" @click="selectPage(index)" @touchstart="selectPage(index)" :style="{'background-image': 'url(' + page.image + ')'}">
-                            
-                        </div>
+            <div style="display: flex;">
+                <a @click="scrollLeft" class="scroll-button scroll-left"><i class="fas fa-arrow-left"></i></a>
+                <div id="pages" @dragover="hover" @dragleave="hover" @drop="drop" ref="pagesContainer">
+                    <div id="instructions" v-if="!pages.length">
+                        <span><i class="fas fa-cloud-upload-alt"></i></span>
+                        <span>Drag and drop an image here</span>
                     </div>
-                </draggable>
+                    <draggable v-if="pages.length" class="page-container" v-model="pages" :move="checkMove">
+                        <div v-for="page, index in pages" :index="index">
+                            <div class="page" :class="{'selected': index === currentPage }" @click="selectPage(index)" @touchstart="selectPage(index)" :style="{'background-image': 'url(' + page.image + ')'}">
+                                
+                            </div>
+                        </div>
+                    </draggable>
+                </div>
+                <a @click="scrollRight" class="scroll-button scroll-right"><i class="fas fa-arrow-right"></i></a>
             </div>
+
 
             <div class="my-3">
                 <b-button @click="downloadPDF" type="is-primary" :disabled="!pages.length"><i class="fas fa-file-pdf mr-2"></i> Download PDF</b-button>

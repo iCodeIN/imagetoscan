@@ -243,6 +243,26 @@ new Vue({
 
     },
     methods: {
+        scrollLeft() {
+            if (this.currentPage > 0) {
+                this.currentPage -= 1;
+            }
+            this.scrollToPage();
+            
+        },
+        scrollRight() {
+            if (this.currentPage < this.pages.length-1) {
+                this.currentPage += 1;
+            }
+            this.scrollToPage();
+        },
+        scrollToPage() {
+            const pageElement = this.$refs.pagesContainer.querySelectorAll(".page")[this.currentPage];
+            if (!pageElement) {
+                return;
+            }
+            this.$refs.pagesContainer.scrollLeft = pageElement.offsetLeft;            
+        },
         deletePage() {
             this.pages.splice(this.currentPage, 1);
             if (this.currentPage > this.pages.length - 1) {
