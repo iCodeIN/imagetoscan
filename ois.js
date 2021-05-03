@@ -390,7 +390,6 @@ new Vue({
             const dst = this.$refs.destcanvas;
             const overlay = this.$refs.overlay;
 
-            var file = files[0];
             var totalFilesToProcess = 0;
             var filesProcessed = 0;
 
