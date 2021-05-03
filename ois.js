@@ -207,6 +207,7 @@ function download(content, fileName, fileType) {
 new Vue({
     el: "#app",
     data: {
+        filesToProcess: [],
         loading: false,
         isLoadingAdjustment: false,
         pages: [],
@@ -324,6 +325,7 @@ new Vue({
             
             this.pages[this.currentPage].outputImage = dst.toDataURL("image/jpeg", 1.0);
             this.prepareDownloadImage();
+            this.getNextFileToProcess();
         },        
         updatePoints() {
             var overlay = this.$refs.overlay;
@@ -382,16 +384,67 @@ new Vue({
         prepareDownloadImage() {
             if (this.fileName) {
                 this.$refs.downloadImage.href = this.$refs.destcanvas.toDataURL("image/jpeg");
-                this.$refs.downloadImage.download = fileName + ".jpg";
+                this.$refs.downloadImage.download = this.fileName + ".jpg";
             }
         },
-        processFiles(files) {
-            const src = this.$refs.sourcecanvas;
-            const dst = this.$refs.destcanvas;
-            const overlay = this.$refs.overlay;
+        getNextFileToProcess() {
+            if (this.filesToProcess.length === 0) {
+                this.loading = false;
+                return;
+            }
+            const file = this.filesToProcess.shift();
+            this.processFile(file);
+        },
+        processFile(file) {
+            const fileName = file.name.substring(0, file.name.lastIndexOf('.'));
 
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const src = this.$refs.sourcecanvas;
+                const dst = this.$refs.destcanvas;
+                const overlay = this.$refs.overlay;
+    
+                var img = new Image();
+                img.onload = (e) => {
+                    const tempCanvas = document.createElement("canvas");
+                    tempCanvas.width = img.width;
+                    tempCanvas.height = img.height;
+                    const tempCtx = tempCanvas.getContext('2d');
+
+                    tempCtx.drawImage(img, 0, 0);
+
+                    var imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+
+                    [this.topLeftX, this.topLeftY, this.topRightX, this.topRightY, this.bottomLeftX, this.bottomLeftY, this.bottomRightX, this.bottomRightY] = getDocumentBoundaries(imgData);
+                    const offset = this.offsetPercent * img.width;
+                    const newPage = {
+                        topLeftX: this.topLeftX,
+                        topLeftY: this.topLeftY,
+                        topRightX: this.topRightX,
+                        topRightY: this.topRightY,
+                        bottomLeftX: this.bottomLeftX,
+                        bottomLeftY: this.bottomLeftY,
+                        bottomRightX: this.bottomRightX,
+                        bottomRightY: this.bottomRightY,
+                        inputWidth: tempCanvas.width,
+                        inputHeight: tempCanvas.height,
+                        rotation: 0,
+                        fileName: fileName,
+                        whiteThreshold: 100,
+                        image: tempCanvas.toDataURL('image/jpeg', 1.0)
+                    }
+
+                    this.pages.push(newPage);
+                    this.currentPage = this.pages.length - 1;
+
+                };
+                img.src = e.target.result;
+
+            };
+            reader.readAsDataURL(file);
+        },
+        processFiles(files) {
             var totalFilesToProcess = 0;
-            var filesProcessed = 0;
 
             this.loading = true;
 
@@ -402,63 +455,15 @@ new Vue({
                     continue;
                 }
 
-                const fileName = file.name.substring(0, file.name.lastIndexOf('.'));
-
+                this.filesToProcess.push(file);
                 totalFilesToProcess += 1;
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    var img = new Image();
-                    img.onload = (e) => {
-                        const tempCanvas = document.createElement("canvas");
-                        tempCanvas.width = img.width;
-                        tempCanvas.height = img.height;
-                        const tempCtx = tempCanvas.getContext('2d');
-
-                        tempCtx.drawImage(img, 0, 0);
-
-                        var imgData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-
-                        [this.topLeftX, this.topLeftY, this.topRightX, this.topRightY, this.bottomLeftX, this.bottomLeftY, this.bottomRightX, this.bottomRightY] = getDocumentBoundaries(imgData);
-                        const offset = this.offsetPercent * img.width;
-                        const newPage = {
-                            topLeftX: this.topLeftX,
-                            topLeftY: this.topLeftY,
-                            topRightX: this.topRightX,
-                            topRightY: this.topRightY,
-                            bottomLeftX: this.bottomLeftX,
-                            bottomLeftY: this.bottomLeftY,
-                            bottomRightX: this.bottomRightX,
-                            bottomRightY: this.bottomRightY,
-                            inputWidth: tempCanvas.width,
-                            inputHeight: tempCanvas.height,
-                            rotation: 0,
-                            fileName: fileName,
-                            whiteThreshold: 100,
-                            image: tempCanvas.toDataURL('image/jpeg', 1.0)
-                        }
-
-                        this.pages.push(newPage);
-                        this.currentPage = this.pages.length - 1;
-
-                        filesProcessed += 1;
-                        if (filesProcessed === totalFilesToProcess) {
-                            this.loading = false;
-                        }
-
-                    };
-                    img.src = e.target.result;
-
-                };
-                reader.readAsDataURL(file);
-
             }
 
             if (totalFilesToProcess === 0) {
                 this.loading = false;
                 this.$buefy.dialog.alert({
                     title: 'Error',
-                    message: "Please upload image files only.",
+                    message: "Please upload one or more images.",
                     type: 'is-danger',
                     hasIcon: true,
                     icon: 'times-circle',
@@ -466,7 +471,10 @@ new Vue({
                     ariaRole: 'alertdialog',
                     ariaModal: true
                 })
-            }
+                return;
+            } 
+
+            this.getNextFileToProcess();
 
         },
         downloadPDF(e) {            
@@ -697,7 +705,6 @@ new Vue({
         currentPage(newPage) {
             this.initializePage(newPage);
         },
-
     }
 
 })
