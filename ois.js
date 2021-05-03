@@ -396,18 +396,17 @@ new Vue({
             this.loading = true;
 
             for (var i = 0; i < files.length; i++) {
-                var file = files[i];
-
+                const file = files[i];
 
                 if (file.type.indexOf("image") !== 0) {
                     continue;
                 }
 
+                const fileName = file.name.substring(0, file.name.lastIndexOf('.'));
+
                 totalFilesToProcess += 1;
 
-                fileName = file.name.substring(0, file.name.lastIndexOf('.'));
-
-                var reader = new FileReader();
+                const reader = new FileReader();
                 reader.onload = (e) => {
                     var img = new Image();
                     img.onload = (e) => {
