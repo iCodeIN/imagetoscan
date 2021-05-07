@@ -71,8 +71,8 @@
             margin: 0 auto;
             text-align: center;
             color: #aaa;
-            font-size: 20px;
-            width: 400px;
+            font-size: 16px;
+            width: 280px;
 
         }
 
@@ -108,6 +108,10 @@
             border: 1px solid #ccc;
             background-color: #eee; 
             padding: 10%;
+        }
+
+        .tab-content {
+            padding: 1em 0 !important;
         }
 
         @media only screen and (max-width: 600px) {
@@ -178,7 +182,7 @@
 
 
 <div class="container">
-    <div class="columns content px-3">
+    <div class="columns px-3">
         <div class="column">
             <div class="my-3">
                 <label class="button is-primary">
@@ -214,11 +218,11 @@
         </div>
     </div>
 
-    <div class="columns content">
+    <div class="columns px-3">
         <div class="column">
             <b-tabs type="is-boxed" v-model="activeTab">
                 <b-tab-item label="Crop" icon="crop" icon-pack="fas">
-                    <p>Move the white corners to match the corners of the page in the photo.</p>
+                    <p class="mb-2">Move the white corners to match the corners of the page in the photo.</p>
                     <div class="page-bin">
                         <div id="canvascontainer">
         
@@ -236,7 +240,7 @@
                     <b-loading :is-full-page="false" v-model="isLoadingAdjustment" :can-cancel="true"></b-loading>
                 
                     <div style="display: flex">
-                        <b-field class="mx-3" label="Orientation">
+                        <b-field class="mr-3" label="Orientation">
                             <p class="control">
                                 <b-button type="is-primary" @click="rotateLeft" icon-left="reply" icon-pack="fas" />
                             </p>
@@ -245,7 +249,7 @@
                             </p>
                         </b-field>
 
-                        <b-field class="mx-3" label="White Threshold" style="width: 200px">
+                        <b-field class="mr-3" label="White Threshold" style="width: 200px">
                             <b-slider :min="0" :max="255" v-model="whiteThreshold" lazy></b-slider>
                         </b-field>
                     </div>
