@@ -68,15 +68,18 @@
         }
 
         #instructions {
+            margin: 0 auto;
             text-align: center;
             color: #aaa;
             font-size: 20px;
-            line-height: 120px;
+            width: 400px;
 
         }
 
         #instructions i {
-            font-size: 20px;
+            font-size: 40px;
+            display: block;
+            margin-top: 10px;
         }
 
         .page-container {
@@ -101,6 +104,17 @@
             border: 3px solid #7957d5;
         }
 
+        .page-bin {
+            border: 1px solid #ccc;
+            background-color: #eee; 
+            padding: 10%;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .page-bin {
+                padding: 5%;
+            }
+        }
 
     </style>
 </head>
@@ -166,17 +180,13 @@
 <div class="container">
     <div class="columns content px-3">
         <div class="column">
-            <h3 class="title is-3 my-3">1. Upload</h3>
-            <hr/>
-            <p>Select an image by dragging & dropping it or by using the Upload button.</p>
             <div class="my-3">
-                <label class="button is-primary is-small">
+                <label class="button is-primary">
                     <i class="fas fa-upload mr-2"></i> Upload Photos <input type="file" accept="image/*" multiple @change="uploadFile" style="display: none;">
                 </label>
-                <label class="button is-primary is-small">
+                <label class="button is-primary">
                     <i class="fas fa-camera mr-2"></i> Scan <input type="file" accept="image/*" capture="camera" @change="uploadFile" style="display: none;">
                 </label>
-                <a id="delete-page" class="button is-danger is-small" @click="deletePage" :disabled="!pages.length"><i class="fas fa-trash mr-2"></i> Delete Page</a>
 
             </div>
 
@@ -185,7 +195,7 @@
                 <div id="pages" @dragover="hover" @dragleave="hover" @drop="drop" ref="pagesContainer">
                     <div id="instructions" v-if="!pages.length">
                         <span><i class="fas fa-cloud-upload-alt"></i></span>
-                        <span>Drag and drop an image here</span>
+                        <span>Drag and drop images here, or use the "Upload Photos" or "Scan" buttons.</span>
                     </div>
                     <draggable v-if="pages.length" class="page-container" v-model="pages" :move="checkMove">
                         <div v-for="page, index in pages" :index="index">
@@ -199,57 +209,62 @@
             </div>
 
 
-            <div class="my-3">
-                <b-button @click="downloadPDF" type="is-primary" :disabled="!pages.length"><i class="fas fa-file-pdf mr-2"></i> Download PDF</b-button>
-                <a id="download-image" class="button is-secondary" ref="downloadImage" :disabled="!pages.length"><i class="fas fa-file-image mr-2"></i> Download Image</a>
 
-            </div>
 
         </div>
     </div>
 
-    <div class="columns content px-3">
+    <div class="columns content">
         <div class="column">
-            <h3 class="title is-3 my-3">2. Crop</h3>
-            <hr/>
-            <p>Move the white corners to match the corners of the page in the photo.</p>
+            <b-tabs type="is-boxed" v-model="activeTab">
+                <b-tab-item label="Crop" icon="crop" icon-pack="fas">
+                    <p>Move the white corners to match the corners of the page in the photo.</p>
+                    <div class="page-bin">
+                        <div id="canvascontainer">
+        
+                            <canvas id="sourcecanvas" ref="sourcecanvas"></canvas>
+                            <canvas id="overlay" ref="overlay" @mousedown="down" @touchstart="down" @mousemove="move" @touchmove="move"></canvas>
+                        </div>
+    
+                    </div>
+                    <div class="buttons my-3">
+                        <b-button type="is-primary" icon-left="check" icon-pack="fas" @click="doneCropping">Done Cropping</b-button>
+                        <a id="delete-page" class="button is-danger" @click="deletePage" :disabled="!pages.length"><i class="fas fa-trash mr-2"></i> Delete Page</a>
+                    </div>
+                </b-tab-item>
+                <b-tab-item label="Adjust" icon="paint-brush" icon-pack="fas" style="position: relative">
+                    <b-loading :is-full-page="false" v-model="isLoadingAdjustment" :can-cancel="true"></b-loading>
+                
+                    <div style="display: flex">
+                        <b-field class="mx-3" label="Orientation">
+                            <p class="control">
+                                <b-button type="is-primary" @click="rotateLeft" icon-left="reply" icon-pack="fas" />
+                            </p>
+                            <p class="control">
+                                <b-button type="is-primary" @click="rotateRight"  icon-left="share" icon-pack="fas" />
+                            </p>
+                        </b-field>
 
-            <div id="canvascontainer">
-
-                <canvas id="sourcecanvas" ref="sourcecanvas"></canvas>
-                <canvas id="overlay" ref="overlay" @mousedown="down" @touchstart="down" @mousemove="move" @touchmove="move"></canvas>
-            </div>
-        </div>
-        <div class="column" style="position: relative">
-            <b-loading :is-full-page="false" v-model="isLoadingAdjustment" :can-cancel="true"></b-loading>
-            <h3 class="title is-3 my-3">3. Adjust</h3>
-            <hr/>
-            <p>Adjust the white threshold and rotation of the document.</p>
-            <div class="columns">
-                <div class="column is-6 my-1">
-                    White Threshold
-                </div>
-                <div class="column is-6">
-                    <b-slider :min="0" :max="255" v-model="whiteThreshold" lazy>
-                </div>
-            </div>
-            <div class="columns">
-                <div class="column is-6 my-1">
-                    Orientation                     
-                </div>
-                <div class="column is-6">
-                    <b-button type="is-primary is-small" @click="rotateLeft"><i class="fas fa-reply"></i></b-button>
-                    <b-button type="is-primary is-small" @click="rotateRight"><i class="fas fa-share"></i></b-button> 
-                </div>
-                <!-- <div class="column">
-                    <b-slider :min="0" :max="270" :step="90" v-model="rotation" lazy></b-slider>
-                </div>                 -->
-            </div>
-            <div>                
-                <canvas id="destcanvas" ref="destcanvas"></canvas>
-            </div>
+                        <b-field class="mx-3" label="White Threshold" style="width: 200px">
+                            <b-slider :min="0" :max="255" v-model="whiteThreshold" lazy></b-slider>
+                        </b-field>
+                    </div>
+                    <div class="page-bin">                
+                        <canvas id="destcanvas" ref="destcanvas"></canvas>
+                    </div>
+                    <div class="buttons my-3">
+                        <b-button @click="downloadPDF" type="is-primary" :disabled="!pages.length"><i class="fas fa-file-pdf mr-2"></i> Download PDF</b-button>
+                        <a id="download-image" class="button is-secondary" ref="downloadImage" :disabled="!pages.length"><i class="fas fa-file-image mr-2"></i> Download Image</a>
+                        <a id="delete-page" class="button is-danger" @click="deletePage" :disabled="!pages.length"><i class="fas fa-trash mr-2"></i> Delete Page</a>
+                    </div>
+        
+                </b-tab-item>
+            </b-tabs>
+                    
         </div>
     </div>
+
+
 
     <div class="columns content px-3" id="faq">
         <div class="column">

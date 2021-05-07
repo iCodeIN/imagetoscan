@@ -207,6 +207,7 @@ function download(content, fileName, fileType) {
 new Vue({
     el: "#app",
     data: {
+        activeTab: 0,
         filesToProcess: [],
         loading: false,
         isLoadingAdjustment: false,
@@ -243,6 +244,9 @@ new Vue({
 
     },
     methods: {
+        doneCropping() {
+            this.activeTab = 1;
+        },
         scrollLeft() {
             if (this.currentPage > 0) {
                 this.currentPage -= 1;
@@ -671,6 +675,7 @@ new Vue({
             this.currentPage = index;
         },
         initializePage(newPage) {
+            this.activeTab = 0;
             const pageData = this.pages[newPage];
 
             this.topLeftX = pageData.topLeftX;
